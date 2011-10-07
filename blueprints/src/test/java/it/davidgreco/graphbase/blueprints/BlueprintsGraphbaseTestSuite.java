@@ -2,12 +2,7 @@ package it.davidgreco.graphbase.blueprints;
 
 import com.tinkerpop.blueprints.pgm.*;
 import com.tinkerpop.blueprints.pgm.impls.GraphTest;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HBaseTestingUtility;
-import org.apache.hadoop.hbase.MasterNotRunningException;
-import org.apache.hadoop.hbase.ZooKeeperConnectionException;
-import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -23,7 +18,7 @@ public class BlueprintsGraphbaseTestSuite extends GraphTest {
     @BeforeClass
     public void setUp() throws Exception {
         testUtil.startMiniCluster();
-        graph = (IndexableGraph) new HBaseGraph("localhost", "21818", "simple");
+        graph = new HBaseGraph("localhost", "21818", "simple");
     }
 
     @AfterClass

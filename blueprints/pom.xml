@@ -8,7 +8,7 @@
         <version>2.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>blueprints</artifactId>
+    <artifactId>graphbase-blueprints</artifactId>
     <name>graphbase/blueprints</name>
     <description>graphbase/blueprints</description>
 
