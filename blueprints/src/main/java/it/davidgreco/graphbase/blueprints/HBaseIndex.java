@@ -84,7 +84,7 @@ class HBaseIndex<T extends Element> implements AutomaticIndex<T> {
     }
 
     @Override
-    public Type getIndexType() {
+    public Index.Type getIndexType() {
         return Index.Type.AUTOMATIC;
     }
 

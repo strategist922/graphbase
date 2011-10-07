@@ -21,7 +21,10 @@ import org.scalatest.matchers.ShouldMatchers
 import org.scalatest.{BeforeAndAfterEach, Spec}
 import org.apache.hadoop.hbase.util.Bytes
 import com.tinkerpop.blueprints.pgm.{Edge, Vertex, IndexableGraph}
+import org.junit.runner.RunWith
+import org.scalatest.junit.JUnitRunner
 
+@RunWith(classOf[JUnitRunner])
 class GraphbaseIndexTestSuite extends Spec with ShouldMatchers with BeforeAndAfterEach with EmbeddedHBase {
 
   val port = "21818"
