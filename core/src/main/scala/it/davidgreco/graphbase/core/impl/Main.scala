@@ -20,8 +20,8 @@ object Main {
     println(v1 == v1a.get)
     println(e1 == e1a.get)
 
-    println(v2.getInEdges("LABEL") == v2.getInEdges())
-    println(v1.getOutEdges("LABEL") == v1.getOutEdges())
+    println(v2.getInEdges(Seq("LABEL")) == v2.getInEdges(Seq()))
+    println(v1.getOutEdges(Seq("LABEL")) == v1.getOutEdges(Seq()))
 
     graph.removeEdge(e1a.get)
 

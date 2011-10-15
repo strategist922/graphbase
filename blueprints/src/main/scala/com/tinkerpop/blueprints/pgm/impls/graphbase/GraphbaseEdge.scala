@@ -4,7 +4,6 @@ import java.util.Set
 import com.tinkerpop.blueprints.pgm.{Vertex, Edge}
 import it.davidgreco.graphbase.core.EdgeT
 import collection.JavaConverters._
-import org.apache.commons.lang.builder.{HashCodeBuilder, EqualsBuilder}
 
 case class GraphbaseEdge(edge: EdgeT) extends Edge {
   def getOutVertex: Vertex = edge.outVertex
