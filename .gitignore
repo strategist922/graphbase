@@ -1,16 +1,4 @@
 .idea/
-graphbase.iml
-blueprints/graphbase-blueprints.iml
-lib_managed/
-out/
-project/boot/
-project/build/target/
-project/plugins/project/
-project/plugins/target/
-project/project.iml
-target/
 .DS_Store
-project/plugins/src_managed/
-tools/graph-generator/graphbase-graph-generator.iml
-tools/graphbase-tools.iml
 *.iml
+*/target
