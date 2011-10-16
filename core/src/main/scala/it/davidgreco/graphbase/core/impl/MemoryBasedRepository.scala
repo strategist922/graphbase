@@ -29,9 +29,9 @@ case class MemoryBasedRepository(name: String) extends RepositoryT {
     if (!(rowIn.isDefined && rowOut.isDefined)) {
       throw new RuntimeException("One or both vertexes don't exist");
     }
-    rowOut.get("OUTEDGES") += eli -> in.id.asInstanceOf[String]
+    rowOut.get("OUTEDGES") += eli -> in.id
     rowOut.get("EDGEPROPERTIES") += generateEdgePropertyId("label", eli) -> label
-    rowIn.get("INEDGES") += eli -> id.asInstanceOf[String]
+    rowIn.get("INEDGES") += eli -> id
     CoreEdge(id, out, in, label, this)
   }
 
