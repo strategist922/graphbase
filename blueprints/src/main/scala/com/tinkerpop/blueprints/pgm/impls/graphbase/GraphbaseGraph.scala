@@ -30,7 +30,7 @@ case class GraphbaseGraph(repository: RepositoryT) extends Graph {
 
   def getEdges: Iterable[Edge] = throw new UnsupportedOperationException();
 
-  def clear() {}
+  def clear(): Unit = coreGraph.clear()
 
-  def shutdown() {}
+  def shutdown(): Unit = coreGraph.shutdown()
 }

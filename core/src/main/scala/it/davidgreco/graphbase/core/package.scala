@@ -15,6 +15,29 @@ package object core {
   val boolean_type: Byte = 7
   val serializable_type: Byte = 10
 
+  implicit def toBytes(obj: Any): Array[Byte] = {
+    obj match {
+      case obj: String => Bytes.toBytes(obj.asInstanceOf[String])
+      case obj: Long => Bytes.toBytes(obj.asInstanceOf[Long])
+      case obj: Int => Bytes.toBytes(obj.asInstanceOf[Int])
+      case obj: Short => Bytes.toBytes(obj.asInstanceOf[Short])
+      case obj: Float => Bytes.toBytes(obj.asInstanceOf[Float])
+      case obj: Double => Bytes.toBytes(obj.asInstanceOf[Double])
+      case obj: Boolean => Bytes.toBytes(obj.asInstanceOf[Boolean])
+      case obj: Array[Byte] => obj.asInstanceOf[Array[Byte]]
+      case obj: Serializable => {
+        val bos = new ByteArrayOutputStream();
+        val out = new ObjectOutputStream(bos);
+        out.writeObject(obj)
+        out.close();
+        bos.toByteArray()
+      }
+      case _ => throw new RuntimeException("Non supported type")
+    }
+  }
+
+  implicit def bytes2String(bytes: Array[Byte]) : String = Bytes.toString(bytes)
+
   def toTypedBytes(obj: Any): Array[Byte] =
     obj match {
       case obj: String => Bytes.add(Array(string_type), Bytes.toBytes(obj.asInstanceOf[String]))
