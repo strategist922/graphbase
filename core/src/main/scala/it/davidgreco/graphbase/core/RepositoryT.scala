@@ -1,6 +1,8 @@
 package it.davidgreco.graphbase.core
 
-trait RepositoryT extends IdGenerationStrategyT {
+trait RepositoryT {
+
+  val idGenerationStrategy: IdGenerationStrategyT
 
   //GraphT
   def shutdown(): Unit
