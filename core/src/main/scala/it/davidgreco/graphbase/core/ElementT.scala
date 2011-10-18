@@ -1,10 +1,10 @@
 package it.davidgreco.graphbase.core
 
-trait ElementT extends WithRepositoryT {
+trait ElementT[T <: Comparable[T]] extends WithRepositoryT[T] {
 
   self =>
 
-  val id: AnyRef
+  val id: T
 
   def getProperty(key: String): Option[AnyRef] = repository.getProperty(self, key)
 

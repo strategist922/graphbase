@@ -5,24 +5,24 @@ import collection.mutable.ConcurrentMap
 import collection.JavaConversions._
 import java.util.concurrent.ConcurrentHashMap
 
-case class MemoryBasedRepository(name: String) extends RepositoryT {
+case class MemoryBasedRepository(name: String) extends RepositoryT[String] {
 
   val idGenerationStrategy = new RandomIdGenerationStrategy
 
-  var table: ConcurrentMap[RandomIdGenerationStrategy#IdType, ConcurrentMap[RandomIdGenerationStrategy#IdType, ConcurrentMap[RandomIdGenerationStrategy#IdType, Array[Byte]]]] = new ConcurrentHashMap[RandomIdGenerationStrategy#IdType, ConcurrentMap[RandomIdGenerationStrategy#IdType, ConcurrentMap[RandomIdGenerationStrategy#IdType, Array[Byte]]]]
+  var table: ConcurrentMap[MemoryBasedRepository#IdType, ConcurrentMap[MemoryBasedRepository#IdType, ConcurrentMap[MemoryBasedRepository#IdType, Array[Byte]]]] = new ConcurrentHashMap[MemoryBasedRepository#IdType, ConcurrentMap[MemoryBasedRepository#IdType, ConcurrentMap[MemoryBasedRepository#IdType, Array[Byte]]]]
 
-  def createVertex: VertexT = {
+  def createVertex: VertexT[String] = {
     val id = idGenerationStrategy.generateVertexId
-    val row = new ConcurrentHashMap[RandomIdGenerationStrategy#IdType, ConcurrentMap[RandomIdGenerationStrategy#IdType, Array[Byte]]]
-    row += "VERTEXPROPERTIES" -> new ConcurrentHashMap[RandomIdGenerationStrategy#IdType, Array[Byte]]()
-    row += "OUTEDGES" -> new ConcurrentHashMap[RandomIdGenerationStrategy#IdType, Array[Byte]]()
-    row += "EDGEPROPERTIES" -> new ConcurrentHashMap[RandomIdGenerationStrategy#IdType, Array[Byte]]()
-    row += "INEDGES" -> new ConcurrentHashMap[RandomIdGenerationStrategy#IdType, Array[Byte]]()
+    val row = new ConcurrentHashMap[MemoryBasedRepository#IdType, ConcurrentMap[MemoryBasedRepository#IdType, Array[Byte]]]
+    row += "VERTEXPROPERTIES" -> new ConcurrentHashMap[MemoryBasedRepository#IdType, Array[Byte]]()
+    row += "OUTEDGES" -> new ConcurrentHashMap[MemoryBasedRepository#IdType, Array[Byte]]()
+    row += "EDGEPROPERTIES" -> new ConcurrentHashMap[MemoryBasedRepository#IdType, Array[Byte]]()
+    row += "INEDGES" -> new ConcurrentHashMap[MemoryBasedRepository#IdType, Array[Byte]]()
     table += id -> row
     CoreVertex(id, this)
   }
 
-  def createEdge(out: VertexT, in: VertexT, label: String): EdgeT = {
+  def createEdge(out: VertexT[String], in: VertexT[String], label: String): EdgeT[String] = {
     val eli = idGenerationStrategy.generateEdgeLocalId
     val id = idGenerationStrategy.generateEdgeId(out.id, eli)
     var rowOut = table.get(out.id)
@@ -36,7 +36,7 @@ case class MemoryBasedRepository(name: String) extends RepositoryT {
     CoreEdge(id, out, in, label, this)
   }
 
-  def getVertex(id: AnyRef): Option[VertexT] = {
+  def getVertex(id: MemoryBasedRepository#IdType): Option[VertexT[MemoryBasedRepository#IdType]] = {
     if (id == null)
       return None;
     val row = table.get(id)
@@ -47,7 +47,7 @@ case class MemoryBasedRepository(name: String) extends RepositoryT {
     }
   }
 
-  def getEdge(id: AnyRef): Option[EdgeT] = {
+  def getEdge(id: MemoryBasedRepository#IdType): Option[EdgeT[MemoryBasedRepository#IdType]] = {
     if (id == null)
       return None;
     val struct = idGenerationStrategy.getEdgeIdStruct(id)
@@ -63,14 +63,13 @@ case class MemoryBasedRepository(name: String) extends RepositoryT {
       case x => throw x
     }
 
-    val inVertexId: RandomIdGenerationStrategy#IdType = inId
     val label: String = rowOut.get.get("EDGEPROPERTIES").get(idGenerationStrategy.generateEdgePropertyId("label", struct._2))
-    val outVertex = CoreVertex(struct._1, this)
-    val inVertex = CoreVertex(inVertexId, this)
-    Some(CoreEdge(id, outVertex, inVertex, label, this))
+    val outVertex = CoreVertex[MemoryBasedRepository#IdType](struct._1, this)
+    val inVertex = CoreVertex[MemoryBasedRepository#IdType](inId, this)
+    Some(CoreEdge[MemoryBasedRepository#IdType](id, outVertex, inVertex, label, this))
   }
 
-  def removeEdge(edge: EdgeT) = {
+  def removeEdge(edge: EdgeT[MemoryBasedRepository#IdType]) = {
     val rowOut = table.get(edge.outVertex.id)
     val rowIn = table.get(edge.inVertex.id)
     if (!rowOut.isEmpty && !rowIn.isEmpty) {
@@ -80,7 +79,7 @@ case class MemoryBasedRepository(name: String) extends RepositoryT {
     }
   }
 
-  def removeVertex(vertex: VertexT) = {
+  def removeVertex(vertex: VertexT[String]) = {
     for (edge <- this.getOutEdges(vertex, Seq[String]())) {
       this.removeEdge(edge)
     }
@@ -90,10 +89,10 @@ case class MemoryBasedRepository(name: String) extends RepositoryT {
     table -= vertex.id
   }
 
-  def getProperty(element: ElementT, key: String): Option[AnyRef] =
+  def getProperty(element: ElementT[String], key: String): Option[AnyRef] =
     element match {
       case
-        v: VertexT => {
+        v: VertexT[String] => {
         val row = table.get(element.id)
         if (row == null)
           throw new RuntimeException("This vertex does not exist");
@@ -104,7 +103,7 @@ case class MemoryBasedRepository(name: String) extends RepositoryT {
           None
       }
       case
-        e: EdgeT => {
+        e: EdgeT[String] => {
         val struct = idGenerationStrategy.getEdgeIdStruct(element.id)
         val row = table.get(struct._1)
         if (row == null)
@@ -117,10 +116,10 @@ case class MemoryBasedRepository(name: String) extends RepositoryT {
       }
     }
 
-  def getPropertyKeys(element: ElementT): Set[String] =
+  def getPropertyKeys(element: ElementT[String]): Set[String] =
     element match {
       case
-        v: VertexT => {
+        v: VertexT[String] => {
         val row = table.get(element.id)
         if (row == null)
           throw new RuntimeException("This vertex does not exist");
@@ -129,7 +128,7 @@ case class MemoryBasedRepository(name: String) extends RepositoryT {
         } yield k).toSet
       }
       case
-        e: EdgeT => {
+        e: EdgeT[String] => {
         val struct = idGenerationStrategy.getEdgeIdStruct(element.id)
         val row = table.get(struct._1)
         if (row == null)
@@ -143,10 +142,10 @@ case class MemoryBasedRepository(name: String) extends RepositoryT {
       }
     }
 
-  def removeProperty(element: ElementT, key: String): Option[AnyRef] =
+  def removeProperty(element: ElementT[String], key: String): Option[AnyRef] =
     element match {
       case
-        v: VertexT => {
+        v: VertexT[String] => {
         val row = table.get(element.id)
         if (row == null)
           throw new RuntimeException("This vertex does not exist");
@@ -159,7 +158,7 @@ case class MemoryBasedRepository(name: String) extends RepositoryT {
           None
       }
       case
-        e: EdgeT => {
+        e: EdgeT[String] => {
         val struct = idGenerationStrategy.getEdgeIdStruct(element.id)
         val row = table.get(struct._1)
         if (row == null)
@@ -175,19 +174,19 @@ case class MemoryBasedRepository(name: String) extends RepositoryT {
       }
     }
 
-  def setProperty(element: ElementT, key: String, value: AnyRef): Unit = {
+  def setProperty(element: ElementT[String], key: String, value: AnyRef): Unit = {
     if (key == "id")
       throw new RuntimeException("Property with key 'id' is not allowed")
     element match {
       case
-        v: VertexT => {
+        v: VertexT[String] => {
         val row = table.get(element.id)
         if (row == null)
           throw new RuntimeException("This vertex does not exist");
         row.get("VERTEXPROPERTIES") += key -> value
       }
       case
-        e: EdgeT => {
+        e: EdgeT[String] => {
         if (key == "label")
           throw new RuntimeException("Property with key 'label' is not allowed")
         val struct = idGenerationStrategy.getEdgeIdStruct(element.id)
@@ -199,7 +198,7 @@ case class MemoryBasedRepository(name: String) extends RepositoryT {
     }
   }
 
-  def getInEdges(vertex: VertexT, labels: Seq[String]): Iterable[EdgeT] = {
+  def getInEdges(vertex: VertexT[String], labels: Seq[String]): Iterable[EdgeT[String]] = {
     val row = table.get(vertex.id)
     if (!row.isDefined) {
       throw new RuntimeException("The vertex does not exist");
@@ -215,10 +214,10 @@ case class MemoryBasedRepository(name: String) extends RepositoryT {
       }
       if ((labels.size != 0 && labels.contains(e.label)) || labels.size == 0)
     } yield e
-    edges.toIterable.asInstanceOf[Iterable[EdgeT]]
+    edges.toIterable.asInstanceOf[Iterable[EdgeT[String]]]
   }
 
-  def getOutEdges(vertex: VertexT, labels: Seq[String]): Iterable[EdgeT] = {
+  def getOutEdges(vertex: VertexT[String], labels: Seq[String]): Iterable[EdgeT[String]] = {
     val row = table.get(vertex.id)
     if (!row.isDefined) {
       throw new RuntimeException("The vertex does not exist");
@@ -234,7 +233,7 @@ case class MemoryBasedRepository(name: String) extends RepositoryT {
       }
       if ((labels.size != 0 && labels.contains(e.label)) || labels.size == 0)
     } yield e
-    edges.toIterable.asInstanceOf[Iterable[EdgeT]]
+    edges.toIterable.asInstanceOf[Iterable[EdgeT[String]]]
   }
 
   def shutdown() {

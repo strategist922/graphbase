@@ -5,7 +5,7 @@ import com.tinkerpop.blueprints.pgm.{Vertex, Edge}
 import it.davidgreco.graphbase.core.EdgeT
 import collection.JavaConverters._
 
-case class GraphbaseEdge(edge: EdgeT) extends Edge {
+case class GraphbaseEdge[T <: Comparable[T]](edge: EdgeT[T]) extends Edge {
   def getOutVertex: Vertex = edge.outVertex
 
   def getInVertex: Vertex = edge.inVertex

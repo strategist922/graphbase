@@ -1,24 +1,24 @@
 package it.davidgreco.graphbase.core
 
-trait GraphT {
+trait GraphT[T <: Comparable[T]] {
 
-  val repository: RepositoryT
+  val repository: RepositoryT[T]
 
-  def addVertex: VertexT = repository.createVertex
+  def addVertex: VertexT[T] = repository.createVertex
 
-  def getVertex(id: AnyRef): Option[VertexT] = repository.getVertex(id)
+  def getVertex(id: T): Option[VertexT[T]] = repository.getVertex(id)
 
-  def removeVertex(vertex: VertexT) = repository.removeVertex(vertex)
+  def removeVertex(vertex: VertexT[T]) = repository.removeVertex(vertex)
 
-  def getVertices: Iterable[VertexT] = null
+  def getVertices: Iterable[VertexT[T]] = null
 
-  def addEdge(outVertex: VertexT, inVertex: VertexT, label: String): EdgeT = repository.createEdge(outVertex, inVertex, label)
+  def addEdge(outVertex: VertexT[T], inVertex: VertexT[T], label: String): EdgeT[T] = repository.createEdge(outVertex, inVertex, label)
 
-  def getEdge(id: AnyRef): Option[EdgeT] = repository.getEdge(id)
+  def getEdge(id: T): Option[EdgeT[T]] = repository.getEdge(id)
 
-  def removeEdge(edge: EdgeT) = repository.removeEdge(edge)
+  def removeEdge(edge: EdgeT[T]) = repository.removeEdge(edge)
 
-  def getEdges: Iterable[EdgeT] = null
+  def getEdges: Iterable[EdgeT[T]] = null
 
   def clear() = repository.clear()
 

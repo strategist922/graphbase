@@ -5,12 +5,12 @@ import com.tinkerpop.blueprints.pgm.{Edge, Vertex}
 
 package object graphbase {
 
-  implicit def edgeToGraphbaseEdge(edge: EdgeT): Edge = GraphbaseEdge(edge)
+  implicit def edgeToGraphbaseEdge[T <: Comparable[T]](edge: EdgeT[T]): Edge = GraphbaseEdge[T](edge)
 
-  implicit def vertexToGraphbaseVertex(vertex: VertexT): Vertex = GraphbaseVertex(vertex)
+  implicit def vertexToGraphbaseVertex[T <: Comparable[T]](vertex: VertexT[T]): Vertex = GraphbaseVertex[T](vertex)
 
-  implicit def graphbaseVertexToVertex(graphbaseVertex: Vertex): VertexT = graphbaseVertex.asInstanceOf[GraphbaseVertex].vertex
+  implicit def graphbaseVertexToVertex[T <: Comparable[T]](graphbaseVertex: Vertex): VertexT[T] = graphbaseVertex.asInstanceOf[GraphbaseVertex[T]].vertex
 
-  implicit def graphbaseEdgeToEdge(graphbaseEdge: Edge): EdgeT = graphbaseEdge.asInstanceOf[GraphbaseEdge].edge
+  implicit def graphbaseEdgeToEdge[T <: Comparable[T]](graphbaseEdge: Edge): EdgeT[T] = graphbaseEdge.asInstanceOf[GraphbaseEdge[T]].edge
 
 }

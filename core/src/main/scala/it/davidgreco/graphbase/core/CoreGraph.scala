@@ -1,3 +1,3 @@
 package it.davidgreco.graphbase.core
 
-case class CoreGraph(repository: RepositoryT) extends GraphT
+case class CoreGraph[T <: Comparable[T]](repository: RepositoryT[T]) extends GraphT[T]

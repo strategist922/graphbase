@@ -3,7 +3,7 @@ package it.davidgreco.graphbase.core.impl
 import it.davidgreco.graphbase.core.IdGenerationStrategyT
 import com.eaio.uuid.UUID
 
-class RandomIdGenerationStrategy extends IdGenerationStrategyT {
+class RandomIdGenerationStrategy extends IdGenerationStrategyT[String] {
 
   def generateVertexId: RandomIdGenerationStrategy#IdType = {
     val rid: UUID = new UUID

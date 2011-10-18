@@ -6,7 +6,7 @@ import com.tinkerpop.blueprints.pgm.{Edge, Vertex}
 import it.davidgreco.graphbase.core.VertexT
 import collection.JavaConverters._
 
-case class GraphbaseVertex(vertex: VertexT) extends Vertex {
+case class GraphbaseVertex[T <: Comparable[T]](vertex: VertexT[T]) extends Vertex {
   def getOutEdges(labels: java.lang.String*): Iterable[Edge] = {
     val slabels = for {
       l <- labels
@@ -34,4 +34,5 @@ case class GraphbaseVertex(vertex: VertexT) extends Vertex {
   def removeProperty(key: String): AnyRef = vertex.removeProperty(key).getOrElse(null)
 
   def getId: AnyRef = vertex.id
+
 }

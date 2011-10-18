@@ -1,8 +1,6 @@
 package it.davidgreco.graphbase.core
 
-trait IdGenerationStrategyT {
-
-  type IdType <: Comparable[IdType]
+trait IdGenerationStrategyT[IdType <: Comparable[IdType]] {
 
   def generateVertexId: IdType
 

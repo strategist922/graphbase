@@ -4,13 +4,13 @@ import java.lang.Iterable
 import com.tinkerpop.blueprints.pgm.{Vertex, Edge, Graph}
 import it.davidgreco.graphbase.core.{GraphT, CoreGraph, RepositoryT}
 
-case class GraphbaseGraph(repository: RepositoryT) extends Graph {
+case class GraphbaseGraph[T <: Comparable[T]](repository: RepositoryT[T]) extends Graph {
 
-  val coreGraph: GraphT = new CoreGraph(repository)
+  val coreGraph: GraphT[T] = new CoreGraph[T](repository)
 
   def addVertex(id: AnyRef): Vertex = coreGraph.addVertex
 
-  def getVertex(id: AnyRef): Vertex = coreGraph.getVertex(id) match {
+  def getVertex(id: AnyRef): Vertex = coreGraph.getVertex(id.asInstanceOf[T]) match {
     case Some(x) => x
     case None => null
   }
@@ -21,7 +21,7 @@ case class GraphbaseGraph(repository: RepositoryT) extends Graph {
 
   def addEdge(p1: AnyRef, outVertex: Vertex, inVertex: Vertex, label: String): Edge = coreGraph.addEdge(outVertex, inVertex, label)
 
-  def getEdge(id: AnyRef): Edge = coreGraph.getEdge(id) match {
+  def getEdge(id: AnyRef): Edge = coreGraph.getEdge(id.asInstanceOf[T]) match {
     case Some(x) => x
     case None => null
   }

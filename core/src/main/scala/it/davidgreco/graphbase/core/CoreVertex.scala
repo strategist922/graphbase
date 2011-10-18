@@ -1,3 +1,3 @@
 package it.davidgreco.graphbase.core
 
-case class CoreVertex(id: AnyRef, repository: RepositoryT) extends VertexT
+case class CoreVertex[T <: Comparable[T]](id: T, repository: RepositoryT[T]) extends VertexT[T]

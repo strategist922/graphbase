@@ -1,10 +1,10 @@
 package it.davidgreco.graphbase.core
 
-trait EdgeT extends ElementT {
+trait EdgeT[T <: Comparable[T]] extends ElementT[T] {
 
-  val outVertex: VertexT
+  val outVertex: VertexT[T]
 
-  val inVertex: VertexT
+  val inVertex: VertexT[T]
 
   def label: String
 }

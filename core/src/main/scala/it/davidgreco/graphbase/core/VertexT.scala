@@ -1,12 +1,12 @@
 package it.davidgreco.graphbase.core
 
-trait VertexT extends ElementT {
+trait VertexT[T <: Comparable[T]] extends ElementT[T] {
 
-  def getOutEdges(labels: Seq[String]): Iterable[EdgeT] = {
+  def getOutEdges(labels: Seq[String]): Iterable[EdgeT[T]] = {
     repository.getOutEdges(this, labels)
   }
 
-  def getInEdges(labels: Seq[String]): Iterable[EdgeT] = {
+  def getInEdges(labels: Seq[String]): Iterable[EdgeT[T]] = {
     repository.getInEdges(this, labels)
   }
 
