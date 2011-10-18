@@ -1,16 +1,18 @@
 package it.davidgreco.graphbase.core
 
-trait IdGenerationStrategyT[IdType <: Comparable[IdType]] {
+trait IdGenerationStrategyT[T <: Comparable[T]] {
 
-  def generateVertexId: IdType
+  type IdType = T
 
-  def generateEdgeLocalId: IdType
+  def generateVertexId: T
 
-  def generateEdgeId(vertexId: IdType, edgeLocalId: IdType): IdType
+  def generateEdgeLocalId: T
 
-  def generateEdgePropertyId(propertyKey: String, edgeLocalId: IdType): IdType
+  def generateEdgeId(vertexId: T, edgeLocalId: T): T
 
-  def getEdgeIdStruct(edgeId: IdType): (IdType, IdType)
+  def generateEdgePropertyId(propertyKey: String, edgeLocalId: T): T
 
-  def getEdgePropertyIdStruct(edgePropertyId: IdType): (String, IdType)
+  def getEdgeIdStruct(edgeId: T): (T, T)
+
+  def getEdgePropertyIdStruct(edgePropertyId: T): (String, T)
 }

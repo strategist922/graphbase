@@ -29,8 +29,4 @@ class RandomIdGenerationStrategy extends IdGenerationStrategyT[String] {
     (fields.apply(0).asInstanceOf[String], fields.apply(1))
   }
 
-  type IdType = String
-
-  implicit def anyRefToIdType(obj: AnyRef): RandomIdGenerationStrategy#IdType = obj.asInstanceOf[RandomIdGenerationStrategy#IdType]
-
 }

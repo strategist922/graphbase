@@ -38,8 +38,6 @@ package object core {
     }
   }
 
-  implicit def anyRefToIdType(obj: AnyRef): RandomIdGenerationStrategy#IdType = obj.asInstanceOf[RandomIdGenerationStrategy#IdType]
-
   def getType(obj: Any): Byte = {
     obj match {
       case obj: Array[Byte] => 0
