@@ -2,6 +2,7 @@ package it.davidgreco.graphbase
 
 import org.apache.hadoop.hbase.util.Bytes
 import java.io.{ByteArrayInputStream, ObjectInputStream, ObjectOutputStream, ByteArrayOutputStream}
+import annotation.switch
 
 package object core {
 
@@ -16,16 +17,16 @@ package object core {
   val serializable_type: Byte = 10
 
   implicit def toBytes(obj: Any): Array[Byte] = {
-    obj match {
-      case obj: String => Bytes.toBytes(obj.asInstanceOf[String])
-      case obj: Long => Bytes.toBytes(obj.asInstanceOf[Long])
-      case obj: Int => Bytes.toBytes(obj.asInstanceOf[Int])
-      case obj: Short => Bytes.toBytes(obj.asInstanceOf[Short])
-      case obj: Float => Bytes.toBytes(obj.asInstanceOf[Float])
-      case obj: Double => Bytes.toBytes(obj.asInstanceOf[Double])
-      case obj: Boolean => Bytes.toBytes(obj.asInstanceOf[Boolean])
-      case obj: Array[Byte] => obj.asInstanceOf[Array[Byte]]
-      case obj: Serializable => {
+    (getType(obj): @switch) match {
+      case 0 => obj.asInstanceOf[Array[Byte]]
+      case 1 => Bytes.toBytes(obj.asInstanceOf[String])
+      case 2 => Bytes.toBytes(obj.asInstanceOf[Long])
+      case 3 => Bytes.toBytes(obj.asInstanceOf[Int])
+      case 4 => Bytes.toBytes(obj.asInstanceOf[Short])
+      case 5 => Bytes.toBytes(obj.asInstanceOf[Float])
+      case 6 => Bytes.toBytes(obj.asInstanceOf[Double])
+      case 7 => Bytes.toBytes(obj.asInstanceOf[Boolean])
+      case 10 => {
         val bos = new ByteArrayOutputStream();
         val out = new ObjectOutputStream(bos);
         out.writeObject(obj)
@@ -36,40 +37,38 @@ package object core {
     }
   }
 
-  implicit def bytes2String(bytes: Array[Byte]) : String = Bytes.toString(bytes)
+  implicit def bytes2String(bytes: Array[Byte]): String = Bytes.toString(bytes)
 
-  def toTypedBytes(obj: Any): Array[Byte] =
+  def getType(obj: Any): Byte = {
     obj match {
-      case obj: String => Bytes.add(Array(string_type), Bytes.toBytes(obj.asInstanceOf[String]))
-      case obj: Long => Bytes.add(Array(long_type), Bytes.toBytes(obj.asInstanceOf[Long]))
-      case obj: Int => Bytes.add(Array(int_type), Bytes.toBytes(obj.asInstanceOf[Int]))
-      case obj: Short => Bytes.add(Array(short_type), Bytes.toBytes(obj.asInstanceOf[Short]))
-      case obj: Float => Bytes.add(Array(float_type), Bytes.toBytes(obj.asInstanceOf[Float]))
-      case obj: Double => Bytes.add(Array(double_type), Bytes.toBytes(obj.asInstanceOf[Double]))
-      case obj: Boolean => Bytes.add(Array(boolean_type), Bytes.toBytes(obj.asInstanceOf[Boolean]))
-      case obj: Array[Byte] => Bytes.add(Array(bytearray_type), obj.asInstanceOf[Array[Byte]])
-      case obj: Serializable => {
-        val bos = new ByteArrayOutputStream();
-        val out = new ObjectOutputStream(bos);
-        out.writeObject(obj)
-        out.close();
-        Bytes.add(Array(serializable_type), bos.toByteArray())
-      }
+      case obj: Array[Byte] => 0
+      case obj: String => 1
+      case obj: Long => 2
+      case obj: Int => 3
+      case obj: Short => 4
+      case obj: Float => 5
+      case obj: Double => 6
+      case obj: Boolean => 7
+      case obj: Serializable => 10
       case _ => throw new RuntimeException("Non supported type")
     }
 
+  }
+
+  def toTypedBytes(obj: Any): Array[Byte] = Bytes.add(Array(getType(obj)), toBytes(obj))
+
   def fromTypedBytes(bytes: Array[Byte]): Any = {
     val vbuffer = Bytes.tail(bytes, bytes.length - 1)
-    bytes.apply(0) match {
-      case x if x == bytearray_type => vbuffer
-      case x if x == string_type => Bytes.toString(vbuffer)
-      case x if x == long_type => Bytes.toLong(vbuffer)
-      case x if x == int_type => Bytes.toInt(vbuffer)
-      case x if x == short_type => Bytes.toShort(vbuffer)
-      case x if x == float_type => Bytes.toFloat(vbuffer)
-      case x if x == double_type => Bytes.toDouble(vbuffer)
-      case x if x == boolean_type => Bytes.toBoolean(vbuffer)
-      case x if x == serializable_type => {
+    (bytes.apply(0): @switch) match {
+      case 0 => vbuffer
+      case 1 => Bytes.toString(vbuffer)
+      case 2 => Bytes.toLong(vbuffer)
+      case 3 => Bytes.toInt(vbuffer)
+      case 4 => Bytes.toShort(vbuffer)
+      case 5 => Bytes.toFloat(vbuffer)
+      case 6 => Bytes.toDouble(vbuffer)
+      case 7 => Bytes.toBoolean(vbuffer)
+      case 10 => {
         val in = new ObjectInputStream(new ByteArrayInputStream(vbuffer))
         val obj = in.readObject();
         in.close()
