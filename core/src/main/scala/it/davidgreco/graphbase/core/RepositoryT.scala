@@ -4,8 +4,6 @@ trait RepositoryT[T <: Comparable[T]] {
 
   val idGenerationStrategy: IdGenerationStrategyT[T]
 
-  type IdType = T
-
   //GraphT
   def shutdown(): Unit
 
