@@ -18,8 +18,8 @@ public class GraphbaseGraphTest extends GraphTest {
         this.ignoresSuppliedIds = true;
         this.isPersistent = true;
         this.isRDFModel = false;
-        this.supportsVertexIteration = false;
-        this.supportsEdgeIteration = false;
+        this.supportsVertexIteration = true;
+        this.supportsEdgeIteration = true;
         this.supportsVertexIndex = false;
         this.supportsEdgeIndex = false;
         this.supportsTransactions = false;

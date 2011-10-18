@@ -25,6 +25,10 @@ trait RepositoryT[T <: Comparable[T]] {
 
   def removeVertex(vertex: VertexT[T]): Unit
 
+  def getVertices(): Iterable[VertexT[T]]
+
+  def getEdges(): Iterable[EdgeT[T]]
+
   //ElementT
   def getProperty(element: ElementT[T], key: String): Option[AnyRef]
 

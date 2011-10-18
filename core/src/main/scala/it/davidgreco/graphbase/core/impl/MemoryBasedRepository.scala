@@ -236,10 +236,25 @@ case class MemoryBasedRepository(name: String) extends RepositoryT[String] {
     edges.toIterable.asInstanceOf[Iterable[EdgeT[this.type#IdType]]]
   }
 
-  def shutdown() {
+  def getVertices(): Iterable[VertexT[this.type#IdType]] = {
+    (for {
+      row <- table
+      v: VertexT[this.type#IdType] = getVertex(row._1).get
+    } yield v).toList
   }
 
-  def clear() = {
+  def getEdges(): Iterable[EdgeT[this.type#IdType]] = {
+    (for {
+      row <- table
+      e: EdgeT[this.type#IdType] <- getVertex(row._1).get.getOutEdges(Seq()).toList
+    } yield e).toList
+
+  }
+
+  def shutdown(): Unit = {
+  }
+
+  def clear(): Unit = {
     table = new ConcurrentHashMap[this.type#IdType, ConcurrentMap[this.type#IdType, ConcurrentMap[this.type#IdType, Array[Byte]]]]
   }
 
