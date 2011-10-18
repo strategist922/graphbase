@@ -54,11 +54,12 @@ package object core {
 
   }
 
-  implicit def toTypedBytes[T](obj: T): Array[Byte] = Bytes.add(Array(getType(obj)), toBytes(obj))
+  implicit def toTypedBytes[T](obj: T): Array[Byte] = Bytes.add(toBytes(obj), Array(getType(obj)))
 
   implicit def fromTypedBytes[T](bytes: Array[Byte]): T = {
-    val vbuffer = Bytes.tail(bytes, bytes.length - 1)
-    (bytes.apply(0): @switch) match {
+    val bl = bytes.length - 1
+    val vbuffer = Bytes.head(bytes,  bl)
+    (bytes.apply(bl): @switch) match {
       case 0 => vbuffer.asInstanceOf[T]
       case 1 => Bytes.toString(vbuffer).asInstanceOf[T]
       case 2 => Bytes.toLong(vbuffer).asInstanceOf[T]
