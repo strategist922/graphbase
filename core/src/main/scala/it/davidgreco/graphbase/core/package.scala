@@ -1,5 +1,6 @@
 package it.davidgreco.graphbase
 
+import core.impl.RandomIdGenerationStrategy
 import org.apache.hadoop.hbase.util.Bytes
 import java.io.{ByteArrayInputStream, ObjectInputStream, ObjectOutputStream, ByteArrayOutputStream}
 import annotation.switch
@@ -16,7 +17,7 @@ package object core {
   val boolean_type: Byte = 7
   val serializable_type: Byte = 10
 
-  implicit def toBytes(obj: Any): Array[Byte] = {
+  def toBytes(obj: Any): Array[Byte] = {
     (getType(obj): @switch) match {
       case 0 => obj.asInstanceOf[Array[Byte]]
       case 1 => Bytes.toBytes(obj.asInstanceOf[String])
@@ -37,7 +38,7 @@ package object core {
     }
   }
 
-  implicit def bytes2String(bytes: Array[Byte]): String = Bytes.toString(bytes)
+  implicit def anyRefToIdType(obj: AnyRef): RandomIdGenerationStrategy#IdType = obj.asInstanceOf[RandomIdGenerationStrategy#IdType]
 
   def getType(obj: Any): Byte = {
     obj match {
@@ -55,24 +56,24 @@ package object core {
 
   }
 
-  def toTypedBytes(obj: Any): Array[Byte] = Bytes.add(Array(getType(obj)), toBytes(obj))
+  implicit def toTypedBytes[T](obj: T): Array[Byte] = Bytes.add(Array(getType(obj)), toBytes(obj))
 
-  def fromTypedBytes(bytes: Array[Byte]): Any = {
+  implicit def fromTypedBytes[T](bytes: Array[Byte]): T = {
     val vbuffer = Bytes.tail(bytes, bytes.length - 1)
     (bytes.apply(0): @switch) match {
-      case 0 => vbuffer
-      case 1 => Bytes.toString(vbuffer)
-      case 2 => Bytes.toLong(vbuffer)
-      case 3 => Bytes.toInt(vbuffer)
-      case 4 => Bytes.toShort(vbuffer)
-      case 5 => Bytes.toFloat(vbuffer)
-      case 6 => Bytes.toDouble(vbuffer)
-      case 7 => Bytes.toBoolean(vbuffer)
+      case 0 => vbuffer.asInstanceOf[T]
+      case 1 => Bytes.toString(vbuffer).asInstanceOf[T]
+      case 2 => Bytes.toLong(vbuffer).asInstanceOf[T]
+      case 3 => Bytes.toInt(vbuffer).asInstanceOf[T]
+      case 4 => Bytes.toShort(vbuffer).asInstanceOf[T]
+      case 5 => Bytes.toFloat(vbuffer).asInstanceOf[T]
+      case 6 => Bytes.toDouble(vbuffer).asInstanceOf[T]
+      case 7 => Bytes.toBoolean(vbuffer).asInstanceOf[T]
       case 10 => {
         val in = new ObjectInputStream(new ByteArrayInputStream(vbuffer))
         val obj = in.readObject();
         in.close()
-        obj
+        obj.asInstanceOf[T]
       }
     }
   }

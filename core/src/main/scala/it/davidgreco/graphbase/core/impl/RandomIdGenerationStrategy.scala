@@ -30,4 +30,7 @@ class RandomIdGenerationStrategy extends IdGenerationStrategyT {
   }
 
   type IdType = String
+
+  implicit def anyRefToIdType(obj: AnyRef): RandomIdGenerationStrategy#IdType = obj.asInstanceOf[RandomIdGenerationStrategy#IdType]
+
 }
