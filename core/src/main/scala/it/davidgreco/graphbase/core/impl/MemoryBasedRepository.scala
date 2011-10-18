@@ -11,7 +11,7 @@ case class MemoryBasedRepository(name: String) extends RepositoryT[String] {
 
   var table: ConcurrentMap[MemoryBasedRepository#IdType, ConcurrentMap[MemoryBasedRepository#IdType, ConcurrentMap[MemoryBasedRepository#IdType, Array[Byte]]]] = new ConcurrentHashMap[MemoryBasedRepository#IdType, ConcurrentMap[MemoryBasedRepository#IdType, ConcurrentMap[MemoryBasedRepository#IdType, Array[Byte]]]]
 
-  def createVertex: VertexT[String] = {
+  def createVertex: VertexT[MemoryBasedRepository#IdType] = {
     val id = idGenerationStrategy.generateVertexId
     val row = new ConcurrentHashMap[MemoryBasedRepository#IdType, ConcurrentMap[MemoryBasedRepository#IdType, Array[Byte]]]
     row += "VERTEXPROPERTIES" -> new ConcurrentHashMap[MemoryBasedRepository#IdType, Array[Byte]]()
@@ -22,7 +22,7 @@ case class MemoryBasedRepository(name: String) extends RepositoryT[String] {
     CoreVertex(id, this)
   }
 
-  def createEdge(out: VertexT[String], in: VertexT[String], label: String): EdgeT[String] = {
+  def createEdge(out: VertexT[MemoryBasedRepository#IdType], in: VertexT[MemoryBasedRepository#IdType], label: String): EdgeT[MemoryBasedRepository#IdType] = {
     val eli = idGenerationStrategy.generateEdgeLocalId
     val id = idGenerationStrategy.generateEdgeId(out.id, eli)
     var rowOut = table.get(out.id)
