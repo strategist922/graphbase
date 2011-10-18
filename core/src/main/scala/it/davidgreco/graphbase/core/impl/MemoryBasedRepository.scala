@@ -63,7 +63,7 @@ case class MemoryBasedRepository(name: String) extends RepositoryT {
       case x => throw x
     }
 
-    val inVertexId: String = inId
+    val inVertexId: RandomIdGenerationStrategy#IdType = inId
     val label: String = rowOut.get.get("EDGEPROPERTIES").get(idGenerationStrategy.generateEdgePropertyId("label", struct._2))
     val outVertex = CoreVertex(struct._1, this)
     val inVertex = CoreVertex(inVertexId, this)
@@ -164,7 +164,7 @@ case class MemoryBasedRepository(name: String) extends RepositoryT {
         val row = table.get(struct._1)
         if (row == null)
           throw new RuntimeException("This edge does not exist");
-        val ekey = idGenerationStrategy.generateEdgePropertyId(key, struct._2).asInstanceOf[String]
+        val ekey = idGenerationStrategy.generateEdgePropertyId(key, struct._2)
         val p = row.get("EDGEPROPERTIES").get(ekey)
         if (p.isDefined) {
           row.get("EDGEPROPERTIES").remove(ekey)
@@ -184,7 +184,7 @@ case class MemoryBasedRepository(name: String) extends RepositoryT {
         val row = table.get(element.id)
         if (row == null)
           throw new RuntimeException("This vertex does not exist");
-        row.get("VERTEXPROPERTIES") += key -> toTypedBytes(value)
+        row.get("VERTEXPROPERTIES") += key -> value
       }
       case
         e: EdgeT => {
@@ -207,12 +207,11 @@ case class MemoryBasedRepository(name: String) extends RepositoryT {
     val edges = for {
       edge: (RandomIdGenerationStrategy#IdType, Array[Byte]) <- row.get("INEDGES")
       e = {
-        val eid: String = edge._2
+        val eid: RandomIdGenerationStrategy#IdType = edge._2
         val struct = idGenerationStrategy.getEdgeIdStruct(eid)
         val outVertex = CoreVertex(struct._1, this)
         val label: String = table.get(struct._1).get("EDGEPROPERTIES").get(idGenerationStrategy.generateEdgePropertyId("label", edge._1)).get
-        val edgeId: String = edge._2
-        CoreEdge(edgeId, outVertex, vertex, label, this)
+        CoreEdge(eid, outVertex, vertex, label, this)
       }
       if ((labels.size != 0 && labels.contains(e.label)) || labels.size == 0)
     } yield e
@@ -227,7 +226,7 @@ case class MemoryBasedRepository(name: String) extends RepositoryT {
     val edges = for {
       edge: (RandomIdGenerationStrategy#IdType, Array[Byte]) <- row.get("OUTEDGES")
       e = {
-        val vid: String = edge._2
+        val vid: RandomIdGenerationStrategy#IdType = edge._2
         val id = idGenerationStrategy.generateEdgeId(vertex.id, edge._1)
         val inVertex = CoreVertex(vid, this)
         val label: String = row.get("EDGEPROPERTIES").get(idGenerationStrategy.generateEdgePropertyId("label", edge._1)).get
