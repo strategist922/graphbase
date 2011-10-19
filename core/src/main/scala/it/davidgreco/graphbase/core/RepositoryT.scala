@@ -1,7 +1,5 @@
 package it.davidgreco.graphbase.core
 
-import sun.rmi.rmic.iiop.IDLGenerator
-
 trait RepositoryT[T <: Comparable[T]] {
 
   val idGenerationStrategy: IdGenerationStrategyT[T]

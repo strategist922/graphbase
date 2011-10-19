@@ -1,24 +1,15 @@
 package it.davidgreco.graphbase
 
-import core.impl.RandomIdGenerationStrategy
 import org.apache.hadoop.hbase.util.Bytes
 import java.io.{ByteArrayInputStream, ObjectInputStream, ObjectOutputStream, ByteArrayOutputStream}
 import annotation.switch
+import scala.Any
 
 package object core {
 
-  val bytearray_type: Byte = 0
-  val string_type: Byte = 1
-  val long_type: Byte = 2
-  val int_type: Byte = 3
-  val short_type: Byte = 4
-  val float_type: Byte = 5
-  val double_type: Byte = 6
-  val boolean_type: Byte = 7
-  val serializable_type: Byte = 10
-
-  def toBytes(obj: Any): Array[Byte] = {
-    (getType(obj): @switch) match {
+  def toBytes(t: Byte, obj: Any): Array[Byte] = {
+    (t: @switch) match
+    {
       case 0 => obj.asInstanceOf[Array[Byte]]
       case 1 => Bytes.toBytes(obj.asInstanceOf[String])
       case 2 => Bytes.toBytes(obj.asInstanceOf[Long])
@@ -51,14 +42,16 @@ package object core {
       case obj: Serializable => 10
       case _ => throw new RuntimeException("Non supported type")
     }
-
   }
 
-  implicit def toTypedBytes[T](obj: T): Array[Byte] = Bytes.add(toBytes(obj), Array(getType(obj)))
+  implicit def toTypedBytes[T](obj: T): Array[Byte] = {
+    val t = getType(obj)
+    Bytes.add(toBytes(t, obj), Array(t))
+  }
 
   implicit def fromTypedBytes[T](bytes: Array[Byte]): T = {
     val bl = bytes.length - 1
-    val vbuffer = Bytes.head(bytes,  bl)
+    val vbuffer = Bytes.head(bytes, bl)
     (bytes.apply(bl): @switch) match {
       case 0 => vbuffer.asInstanceOf[T]
       case 1 => Bytes.toString(vbuffer).asInstanceOf[T]
