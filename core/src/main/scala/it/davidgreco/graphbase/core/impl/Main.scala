@@ -4,7 +4,7 @@ object Main {
 
   def main(args: Array[String]) {
 
-    val repository = MemoryBasedRepository("TABLE1")
+    val repository = MemoryBasedRepository("TABLE1", RandomIdGenerationStrategy())
 
     val graph = MemoryBasedGraph(repository)
 

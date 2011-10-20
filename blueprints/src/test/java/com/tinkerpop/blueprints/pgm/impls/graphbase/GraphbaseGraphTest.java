@@ -7,6 +7,7 @@ import com.tinkerpop.blueprints.pgm.TestSuite;
 import com.tinkerpop.blueprints.pgm.VertexTestSuite;
 import com.tinkerpop.blueprints.pgm.impls.GraphTest;
 import it.davidgreco.graphbase.core.impl.MemoryBasedRepository;
+import it.davidgreco.graphbase.core.impl.RandomIdGenerationStrategy;
 
 import java.lang.reflect.Method;
 
@@ -27,7 +28,7 @@ public class GraphbaseGraphTest extends GraphTest {
 
     @Override
     public Graph getGraphInstance() {
-        return new GraphbaseGraph(new MemoryBasedRepository("GRAPH"));
+        return new GraphbaseGraph(new MemoryBasedRepository("GRAPH", new RandomIdGenerationStrategy()));
     }
 
     public void testVertexTestSuite() throws Exception {

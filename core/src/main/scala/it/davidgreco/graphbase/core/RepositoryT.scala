@@ -1,10 +1,8 @@
 package it.davidgreco.graphbase.core
 
-trait RepositoryT[T <: Comparable[T]] {
+trait RepositoryT[T <: Comparable[T]] extends WithIdGenerationStrategyT[T] {
 
-  val idGenerationStrategy: IdGenerationStrategyT[T]
-
-  type IdType = IdGenerationStrategyT[T]#IdType
+  type IdType = T
 
   //GraphT
   def shutdown(): Unit

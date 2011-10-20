@@ -5,9 +5,7 @@ import collection.mutable.ConcurrentMap
 import collection.JavaConversions._
 import java.util.concurrent.ConcurrentHashMap
 
-case class MemoryBasedRepository(name: String) extends RepositoryT[String] {
-
-  val idGenerationStrategy = new RandomIdGenerationStrategy
+case class MemoryBasedRepository(name: String, idGenerationStrategy: IdGenerationStrategyT[String]) extends RepositoryT[String] with WithIdGenerationStrategyT[String] {
 
   var table: ConcurrentMap[IdType, ConcurrentMap[IdType, ConcurrentMap[IdType, Array[Byte]]]] = new ConcurrentHashMap[IdType, ConcurrentMap[IdType, ConcurrentMap[IdType, Array[Byte]]]]
 

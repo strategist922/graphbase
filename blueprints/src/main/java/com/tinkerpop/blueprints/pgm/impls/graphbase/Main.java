@@ -4,14 +4,16 @@ import com.tinkerpop.blueprints.pgm.Edge;
 import com.tinkerpop.blueprints.pgm.Graph;
 import com.tinkerpop.blueprints.pgm.Vertex;
 import it.davidgreco.graphbase.core.impl.MemoryBasedRepository;
+import it.davidgreco.graphbase.core.impl.RandomIdGenerationStrategy;
 
 import java.util.Set;
 
 public class Main {
 
     public static void main(String[] args) {
-        /*
-        MemoryBasedRepository repository = new MemoryBasedRepository("GRAPH");
+
+        RandomIdGenerationStrategy idGenerationStrategy = new RandomIdGenerationStrategy();
+        MemoryBasedRepository repository = new MemoryBasedRepository("GRAPH", idGenerationStrategy);
         Graph g = (Graph) new GraphbaseGraph(repository);
         Vertex v1 = g.addVertex(null);
         Vertex v2 = g.addVertex(null);
@@ -25,7 +27,7 @@ public class Main {
         Vertex v1a = g.getVertex(v1.getId());
 
         System.out.println(v1.getId() == v1a.getId());
-        */
+
     }
 
 }
