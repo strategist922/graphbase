@@ -1,6 +1,6 @@
 package it.davidgreco.graphbase.core
 
-private[core] trait RepositoryT[T <: Comparable[T]] {
+trait RepositoryT[T <: Comparable[T]] {
 
   val idGenerationStrategy: IdGenerationStrategyT[T]
 
