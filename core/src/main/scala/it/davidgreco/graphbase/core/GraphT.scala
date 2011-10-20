@@ -1,6 +1,6 @@
 package it.davidgreco.graphbase.core
 
-trait GraphT[T <: Comparable[T]] {
+private[core] trait GraphT[T <: Comparable[T]] {
 
   val repository: RepositoryT[T]
 

@@ -1,6 +1,6 @@
 package it.davidgreco.graphbase.core
 
-trait IdGenerationStrategyT[T <: Comparable[T]] {
+private[core] trait IdGenerationStrategyT[T <: Comparable[T]] {
 
   type IdType = T
 
