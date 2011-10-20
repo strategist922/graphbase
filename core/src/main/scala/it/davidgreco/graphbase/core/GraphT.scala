@@ -1,8 +1,6 @@
 package it.davidgreco.graphbase.core
 
-trait GraphT[T <: Comparable[T]] {
-
-  val repository: RepositoryT[T]
+trait GraphT[T <: Comparable[T]] extends WithRepositoryT[T] {
 
   def addVertex: VertexT[T] = repository.createVertex
 
