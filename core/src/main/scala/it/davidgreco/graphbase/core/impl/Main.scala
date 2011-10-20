@@ -1,7 +1,5 @@
 package it.davidgreco.graphbase.core.impl
 
-import it.davidgreco.graphbase.core._
-
 object Main {
 
   def main(args: Array[String]) {
@@ -10,9 +8,9 @@ object Main {
 
     val graph = MemoryBasedGraph(repository)
 
-    val v1  = graph.addVertex
-    val v2  = graph.addVertex
-    val e1  = graph.addEdge(v1, v2, "LABEL")
+    val v1 = graph.addVertex
+    val v2 = graph.addVertex
+    val e1 = graph.addEdge(v1, v2, "LABEL")
 
     val v1a = graph.getVertex(v1.id)
     val e1a = graph.getEdge(e1.id)
