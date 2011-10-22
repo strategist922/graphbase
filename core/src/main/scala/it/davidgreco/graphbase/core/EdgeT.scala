@@ -1,6 +1,6 @@
 package it.davidgreco.graphbase.core
 
-trait EdgeT[T <: Comparable[T]] extends ElementT[T] {
+trait EdgeT[T] extends ElementT[T] {
 
   val outVertex: VertexT[T]
 

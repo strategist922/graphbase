@@ -1,6 +1,6 @@
 package it.davidgreco.graphbase.core
 
-trait RepositoryT[T <: Comparable[T]] extends WithIdGenerationStrategyT[T] {
+trait RepositoryT[T] extends WithIdGenerationStrategyT[T] {
 
   type IdType = T
 

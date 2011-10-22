@@ -1,6 +1,6 @@
 package it.davidgreco.graphbase.core
 
-private[core] trait ElementT[T <: Comparable[T]] extends WithRepositoryT[T] {
+private[core] trait ElementT[T] extends WithRepositoryT[T] {
 
   self =>
 
