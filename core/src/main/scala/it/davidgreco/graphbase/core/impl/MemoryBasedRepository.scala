@@ -1,21 +1,19 @@
 package it.davidgreco.graphbase.core.impl
 
 import it.davidgreco.graphbase.core._
-import collection.mutable.ConcurrentMap
-import collection.JavaConversions._
-import java.util.concurrent.ConcurrentHashMap
+import collection.mutable.HashMap
 
 case class MemoryBasedRepository(name: String, idGenerationStrategy: IdGenerationStrategyT[String]) extends RepositoryT[String] {
 
-  var table: ConcurrentMap[IdType, ConcurrentMap[IdType, ConcurrentMap[IdType, Array[Byte]]]] = new ConcurrentHashMap[IdType, ConcurrentMap[IdType, ConcurrentMap[IdType, Array[Byte]]]]
+  var table = new HashMap[IdType, HashMap[IdType, HashMap[IdType, Array[Byte]]]]
 
   def createVertex: VertexT[IdType] = {
     val id = idGenerationStrategy.generateVertexId
-    val row = new ConcurrentHashMap[IdType, ConcurrentMap[IdType, Array[Byte]]]
-    row += "VERTEXPROPERTIES" -> new ConcurrentHashMap[IdType, Array[Byte]]()
-    row += "OUTEDGES" -> new ConcurrentHashMap[IdType, Array[Byte]]()
-    row += "EDGEPROPERTIES" -> new ConcurrentHashMap[IdType, Array[Byte]]()
-    row += "INEDGES" -> new ConcurrentHashMap[IdType, Array[Byte]]()
+    val row = new HashMap[IdType, HashMap[IdType, Array[Byte]]]
+    row += "VERTEXPROPERTIES" -> new HashMap[IdType, Array[Byte]]()
+    row += "OUTEDGES" -> new HashMap[IdType, Array[Byte]]()
+    row += "EDGEPROPERTIES" -> new HashMap[IdType, Array[Byte]]()
+    row += "INEDGES" -> new HashMap[IdType, Array[Byte]]()
     table += id -> row
     CoreVertex(id, this)
   }
@@ -253,7 +251,7 @@ case class MemoryBasedRepository(name: String, idGenerationStrategy: IdGeneratio
   }
 
   def clear(): Unit = {
-    table = new ConcurrentHashMap[IdType, ConcurrentMap[IdType, ConcurrentMap[IdType, Array[Byte]]]]
+    table = new HashMap[IdType, HashMap[IdType, HashMap[IdType, Array[Byte]]]]
   }
 
 }

@@ -14,7 +14,7 @@ public class Main {
 
         RandomIdGenerationStrategy idGenerationStrategy = new RandomIdGenerationStrategy();
         MemoryBasedRepository repository = new MemoryBasedRepository("GRAPH", idGenerationStrategy);
-        Graph g = (Graph) new GraphbaseGraph(repository);
+        Graph g = new GraphbaseGraph(repository);
         Vertex v1 = g.addVertex(null);
         Vertex v2 = g.addVertex(null);
         Edge e1 = g.addEdge(null, v1, v2, "LABEL");

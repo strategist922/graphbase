@@ -15,9 +15,9 @@ case class RandomIdGenerationStrategy() extends IdGenerationStrategyT[String] {
     rid.getTime.toHexString
   }
 
-  def generateEdgeId(vertexId: String, edgeLocalId: String): String = vertexId.asInstanceOf[String]+'#'+edgeLocalId.asInstanceOf[String]
+  def generateEdgeId(vertexId: String, edgeLocalId: String): String = vertexId.asInstanceOf[String]+'#'+edgeLocalId
 
-  def generateEdgePropertyId(propertyKey: String, edgeLocalId: String): String = propertyKey+'#'+edgeLocalId.asInstanceOf[String]
+  def generateEdgePropertyId(propertyKey: String, edgeLocalId: String): String = propertyKey+'#'+edgeLocalId
 
   def getEdgeIdStruct(edgeId: String): (String, String) = {
     val fields = edgeId.asInstanceOf[String].split('#')
