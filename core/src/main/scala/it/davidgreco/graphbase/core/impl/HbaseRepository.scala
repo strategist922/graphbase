@@ -1,18 +1,18 @@
 package it.davidgreco.graphbase.core.impl
 
+import collection.JavaConverters._
 import it.davidgreco.graphbase.core._
 import java.io.IOException
 import org.apache.hadoop.hbase.{HColumnDescriptor, HTableDescriptor, MasterNotRunningException, ZooKeeperConnectionException}
-import org.apache.hadoop.hbase.client.{Put, HTable, HBaseAdmin}
-import org.apache.hadoop.hbase.util.Bytes
+import org.apache.hadoop.hbase.client._
 
 case class HBaseRepository(admin: HBaseAdmin, name: String, idGenerationStrategy: IdGenerationStrategyT[Array[Byte]]) extends RepositoryT[Array[Byte]] {
 
   private val tableName = name + '$' + "GRAPH"
-  private val vertexPropertiesColumnFamily = tableName + '$' + "VERTEXPROPERTIES"
-  private val edgePropertiesColumnFamily = tableName + '$' + "EDGEPROPERTIES"
-  private val inEdgesColumnFamily = tableName + '$' + "INEDGES"
-  private val outEdgesColumnFamily = tableName + '$' + "OUTEDGES"
+  private val vertexPropertiesColumnFamily: Array[Byte] = tableName + '$' + "VERTEXPROPERTIES"
+  private val edgePropertiesColumnFamily: Array[Byte] = tableName + '$' + "EDGEPROPERTIES"
+  private val inEdgesColumnFamily: Array[Byte] = tableName + '$' + "INEDGES"
+  private val outEdgesColumnFamily: Array[Byte] = tableName + '$' + "OUTEDGES"
   private var table: HTable = _
 
 
@@ -60,7 +60,7 @@ case class HBaseRepository(admin: HBaseAdmin, name: String, idGenerationStrategy
     val id = idGenerationStrategy.generateVertexId
 
     val put = new Put(id);
-    put.add(Bytes.toBytes(vertexPropertiesColumnFamily), null, null);
+    put.add(vertexPropertiesColumnFamily, null, null);
     table.put(put);
 
     CoreVertex(id, this)
@@ -70,34 +70,161 @@ case class HBaseRepository(admin: HBaseAdmin, name: String, idGenerationStrategy
     val eli = idGenerationStrategy.generateEdgeLocalId
     val id = idGenerationStrategy.generateEdgeId(out.id, eli)
 
-    /*
-    var rowOut = table.get(out.id)
-    var rowIn = table.get(in.id)
-    if (!(rowIn.isDefined && rowOut.isDefined)) {
+    val outGet = new Get(out.id)
+    val inGet = new Get(in.id)
+    val rowOut = table.get(outGet)
+    val rowIn = table.get(inGet)
+
+    if (rowOut.isEmpty || rowIn.isEmpty) {
       throw new RuntimeException("One or both vertexes don't exist");
     }
-    rowOut.get("OUTEDGES") += eli -> in.id
-    rowOut.get("EDGEPROPERTIES") += idGenerationStrategy.generateEdgePropertyId("label", eli) -> label
-    rowIn.get("INEDGES") += eli -> id */
+
+    val outPut = new Put(out.id)
+    outPut.add(outEdgesColumnFamily, eli, in.id)
+    val blabel: Array[Byte] = label
+    outPut.add(edgePropertiesColumnFamily, idGenerationStrategy.generateEdgePropertyId("label", eli), blabel)
+
+    val inPut = new Put(in.id)
+    inPut.add(inEdgesColumnFamily, eli, id)
+
+    table.put(List(outPut, inPut).asJava)
 
     CoreEdge(id, out, in, label, this)
   }
 
-  def getVertex(id: Array[Byte]) = null
+  def getVertex(id: Array[Byte]): Option[VertexT[IdType]] = {
+    if (id == null)
+      return None;
+    val rowGet = new Get(id)
+    val row = table.get(rowGet)
+    if (row.isEmpty)
+      None
+    else {
+      Some(CoreVertex(id, this))
+    }
+  }
 
-  def getEdge(id: Array[Byte]) = null
+  def getEdge(id: Array[Byte]): Option[EdgeT[IdType]] = {
+    if (id == null)
+      return None;
+    val struct = idGenerationStrategy.getEdgeIdStruct(id)
+    val outGet = new Get(struct._1)
+    val rowOut = table.get(outGet)
+    if (rowOut.isEmpty)
+      return None
 
-  def removeEdge(edge: EdgeT[Array[Byte]]) {}
+    var inId: Array[Byte] = rowOut.getValue(outEdgesColumnFamily, struct._2)
+    if (inId == null)
+      return None
 
-  def removeVertex(vertex: VertexT[Array[Byte]]) {}
+    val label: String = rowOut.getValue(edgePropertiesColumnFamily, idGenerationStrategy.generateEdgePropertyId("label", struct._2))
+
+    val outVertex = CoreVertex[IdType](struct._1, this)
+    val inVertex = CoreVertex[IdType](inId, this)
+    Some(CoreEdge[IdType](id, outVertex, inVertex, label, this))
+  }
+
+  def removeEdge(edge: EdgeT[Array[Byte]]): Unit = {
+    val outGet = new Get(edge.outVertex.id)
+    val inGet = new Get(edge.inVertex.id)
+    val rowOut = table.get(outGet)
+    val rowIn = table.get(inGet)
+
+    if (rowOut.isEmpty || rowIn.isEmpty) {
+      throw new RuntimeException("One or both vertexes don't exist");
+    }
+
+    val struct = idGenerationStrategy.getEdgeIdStruct(edge.id)
+
+    val deleteOut = new Delete(rowOut.getRow())
+    deleteOut.deleteColumns(outEdgesColumnFamily, struct._2);
+
+    val deleteIn = new Delete(rowIn.getRow())
+    deleteIn.deleteColumns(inEdgesColumnFamily, struct._2);
+
+    edge.getPropertyKeys map (p => edge.removeProperty(p))
+
+    table.delete(List(deleteOut, deleteIn).asJava)
+  }
+
+  def removeVertex(vertex: VertexT[Array[Byte]]): Unit = {
+    /*
+    for (edge <- this.getOutEdges(vertex, Seq[String]())) {
+      this.removeEdge(edge)
+    }
+    for (edge <- this.getInEdges(vertex, Seq[String]())) {
+      this.removeEdge(edge)
+    }*/
+    val delete = new Delete(vertex.id)
+    table.delete(delete);
+  }
 
   def getVertices() = null
 
   def getEdges() = null
 
-  def getProperty(element: ElementT[Array[Byte]], key: String) = null
+  def getProperty(element: ElementT[Array[Byte]], key: String): Option[AnyRef] =
+    element match {
+      case
+        v: VertexT[IdType] => {
+        val rowGet = new Get(element.id)
+        val row = table.get(rowGet)
+        if (row.isEmpty)
+          throw new RuntimeException("This vertex does not exist");
+        val p = row.getValue(vertexPropertiesColumnFamily, key)
+        if (p != null)
+          Some(fromTypedBytes(p))
+        else
+          None
+      }
+      case
+        e: EdgeT[IdType] => {
+        val struct = idGenerationStrategy.getEdgeIdStruct(element.id)
+        val rowGet = new Get(struct._1)
+        val row = table.get(rowGet)
+        if (row.isEmpty)
+          throw new RuntimeException("This edge does not exist")
+        val p = row.getValue(edgePropertiesColumnFamily, idGenerationStrategy.generateEdgePropertyId(key, struct._2))
+        if (p != null)
+          Some(fromTypedBytes(p))
+        else
+          None
+      }
+    }
 
-  def getPropertyKeys(element: ElementT[Array[Byte]]) = null
+  def getPropertyKeys(element: ElementT[Array[Byte]]): Set[String] =
+    element match {
+      case
+        v: VertexT[IdType] => {
+        val rowGet = new Get(element.id)
+        val row = table.get(rowGet)
+        if (row.isEmpty)
+          throw new RuntimeException("This vertex does not exist")
+
+        val familyMap = row.getFamilyMap(vertexPropertiesColumnFamily)
+        (for {
+          bkey <- familyMap.keySet.asScala
+          key: String = bkey
+          if (bkey.length != 0)
+        } yield key).toSet
+      }
+      case
+        e: EdgeT[IdType] => {
+        val struct = idGenerationStrategy.getEdgeIdStruct(element.id)
+        val rowGet = new Get(struct._1)
+        val row = table.get(rowGet)
+        if (row.isEmpty)
+          throw new RuntimeException("This edge does not exist")
+
+        val familyMap = row.getFamilyMap(edgePropertiesColumnFamily)
+
+        (for {
+          edgeProperty <- familyMap.asScala
+          (key, edgeLocalId) = idGenerationStrategy.getEdgePropertyIdStruct(edgeProperty._1)
+          if (edgeProperty.length != 0 && edgeLocalId == struct._2 && !(key == "label"))
+        } yield key).toSet
+      }
+    }
 
   def removeProperty(element: ElementT[Array[Byte]], key: String) = null
 
