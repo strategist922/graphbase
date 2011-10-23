@@ -69,6 +69,7 @@ case class MemoryBasedRepository(name: String, idGenerationStrategy: IdGeneratio
     val rowOut = table.get(edge.outVertex.id)
     val rowIn = table.get(edge.inVertex.id)
     if (!rowOut.isEmpty && !rowIn.isEmpty) {
+      edge.getPropertyKeys map ( p => edge.removeProperty(p) )
       val struct = idGenerationStrategy.getEdgeIdStruct(edge.id)
       rowOut.get.get("OUTEDGES").get.remove(struct._2)
       rowIn.get.get("INEDGES").get.remove(struct._2)
