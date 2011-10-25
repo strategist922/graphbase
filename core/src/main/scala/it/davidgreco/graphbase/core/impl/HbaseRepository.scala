@@ -1,30 +1,50 @@
 package it.davidgreco.graphbase.core.impl
 
 import collection.JavaConverters._
-import it.davidgreco.graphbase.core._
 import java.io.IOException
-import org.apache.hadoop.hbase.{HColumnDescriptor, HTableDescriptor, MasterNotRunningException, ZooKeeperConnectionException}
 import org.apache.hadoop.hbase.client._
+import org.apache.hadoop.hbase._
+import util.Bytes
+import it.davidgreco.graphbase.core._
 
-case class HBaseRepository(admin: HBaseAdmin, name: String, idGenerationStrategy: IdGenerationStrategyT[Array[Byte]]) extends RepositoryT[Array[Byte]] {
+case class HBaseRepository(quorum: String, port: String, name: String, idGenerationStrategy: IdGenerationStrategyT[Array[Byte]]) extends RepositoryT[Array[Byte]] {
 
-  private val tableName = name + '$' + "GRAPH"
-  private val vertexPropertiesColumnFamily: Array[Byte] = tableName + '$' + "VERTEXPROPERTIES"
-  private val edgePropertiesColumnFamily: Array[Byte] = tableName + '$' + "EDGEPROPERTIES"
-  private val inEdgesColumnFamily: Array[Byte] = tableName + '$' + "INEDGES"
-  private val outEdgesColumnFamily: Array[Byte] = tableName + '$' + "OUTEDGES"
+  private val admin = {
+    val conf = HBaseConfiguration.create()
+    conf.set("hbase.zookeeper.quorum", quorum)
+    conf.set("hbase.zookeeper.property.clientPort", port)
+    try {
+      new HBaseAdmin(conf);
+    } catch {
+      case e: MasterNotRunningException => throw new RuntimeException(e)
+      case e: ZooKeeperConnectionException => throw new RuntimeException(e)
+    }
+  }
+
+  private val tableName = name + '_' + "GRAPH"
+
+  private val vertexPropertiesColumnFamilyName = tableName + '_' + "VERTEXPROPERTIES"
+  private val edgePropertiesColumnFamilyName = tableName + '_' + "EDGEPROPERTIES"
+  private val inEdgesColumnFamilyName = tableName + '_' + "INEDGES"
+  private val outEdgesColumnFamilyName = tableName + '_' + "OUTEDGES"
+
+  private val vertexPropertiesColumnFamily: Array[Byte] = Bytes.toBytes(vertexPropertiesColumnFamilyName)
+  private val edgePropertiesColumnFamily: Array[Byte] = Bytes.toBytes(edgePropertiesColumnFamilyName)
+  private val inEdgesColumnFamily: Array[Byte] = Bytes.toBytes(inEdgesColumnFamilyName)
+  private val outEdgesColumnFamily: Array[Byte] = Bytes.toBytes(outEdgesColumnFamilyName)
   private var table: HTable = _
 
+  createTables
 
   private def createTables = {
     try {
       if (!admin.tableExists(tableName)) {
         admin.createTable(new HTableDescriptor(tableName));
         admin.disableTable(tableName);
-        admin.addColumn(tableName, new HColumnDescriptor(vertexPropertiesColumnFamily));
-        admin.addColumn(tableName, new HColumnDescriptor(edgePropertiesColumnFamily));
-        admin.addColumn(tableName, new HColumnDescriptor(inEdgesColumnFamily));
-        admin.addColumn(tableName, new HColumnDescriptor(outEdgesColumnFamily));
+        admin.addColumn(tableName, new HColumnDescriptor(vertexPropertiesColumnFamilyName));
+        admin.addColumn(tableName, new HColumnDescriptor(edgePropertiesColumnFamilyName));
+        admin.addColumn(tableName, new HColumnDescriptor(inEdgesColumnFamilyName));
+        admin.addColumn(tableName, new HColumnDescriptor(outEdgesColumnFamilyName));
         admin.enableTable(tableName);
       }
       table = new HTable(admin.getConfiguration(), tableName);
@@ -38,8 +58,8 @@ case class HBaseRepository(admin: HBaseAdmin, name: String, idGenerationStrategy
   private def dropTables = {
     try {
       if (admin.tableExists(tableName)) {
-        admin.disableTable(tableName);
-        admin.deleteTable(tableName);
+        admin.disableTable(tableName)
+        admin.deleteTable(tableName)
       }
     } catch {
       case e: MasterNotRunningException => throw new RuntimeException(e)
@@ -63,7 +83,7 @@ case class HBaseRepository(admin: HBaseAdmin, name: String, idGenerationStrategy
     put.add(vertexPropertiesColumnFamily, null, null);
     table.put(put);
 
-    CoreVertex(id, this)
+    new CoreVertex[IdType](id, this) with BinaryIdEquatable[CoreVertex[IdType]]
   }
 
   def createEdge(out: VertexT[Array[Byte]], in: VertexT[Array[Byte]], label: String): EdgeT[IdType] = {
@@ -76,7 +96,7 @@ case class HBaseRepository(admin: HBaseAdmin, name: String, idGenerationStrategy
     val rowIn = table.get(inGet)
 
     if (rowOut.isEmpty || rowIn.isEmpty) {
-      throw new RuntimeException("One or both vertexes don't exist");
+      throw new RuntimeException("One or both vertexes don't exist")
     }
 
     val outPut = new Put(out.id)
@@ -89,7 +109,7 @@ case class HBaseRepository(admin: HBaseAdmin, name: String, idGenerationStrategy
 
     table.put(List(outPut, inPut).asJava)
 
-    CoreEdge(id, out, in, label, this)
+    new CoreEdge[IdType](id, out, in, label, this) with BinaryIdEquatable[CoreEdge[IdType]]
   }
 
   def getVertex(id: Array[Byte]): Option[VertexT[IdType]] = {
@@ -100,7 +120,7 @@ case class HBaseRepository(admin: HBaseAdmin, name: String, idGenerationStrategy
     if (row.isEmpty)
       None
     else {
-      Some(CoreVertex(id, this))
+      Some(new CoreVertex[IdType](id, this) with BinaryIdEquatable[CoreVertex[IdType]])
     }
   }
 
@@ -113,15 +133,15 @@ case class HBaseRepository(admin: HBaseAdmin, name: String, idGenerationStrategy
     if (rowOut.isEmpty)
       return None
 
-    var inId: Array[Byte] = rowOut.getValue(outEdgesColumnFamily, struct._2)
+    val inId: Array[Byte] = rowOut.getValue(outEdgesColumnFamily, struct._2)
     if (inId == null)
       return None
 
     val label: String = rowOut.getValue(edgePropertiesColumnFamily, idGenerationStrategy.generateEdgePropertyId("label", struct._2))
 
-    val outVertex = CoreVertex[IdType](struct._1, this)
-    val inVertex = CoreVertex[IdType](inId, this)
-    Some(CoreEdge[IdType](id, outVertex, inVertex, label, this))
+    val outVertex = new CoreVertex[IdType](struct._1, this) with BinaryIdEquatable[CoreVertex[IdType]]
+    val inVertex = new CoreVertex[IdType](inId, this) with BinaryIdEquatable[CoreVertex[IdType]]
+    Some(new CoreEdge[IdType](id, outVertex, inVertex, label, this) with BinaryIdEquatable[CoreEdge[IdType]])
   }
 
   def removeEdge(edge: EdgeT[Array[Byte]]): Unit = {
