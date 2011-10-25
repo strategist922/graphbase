@@ -4,9 +4,31 @@ object Main {
 
   def main(args: Array[String]) {
 
-    val repository = MemoryBasedRepository("TABLE1", RandomIdGenerationStrategy())
+    implicit val o = new math.Ordering[Array[Byte]] {
+      def compare(a: Array[Byte], b: Array[Byte]): Int = {
+        if (a eq null) {
+          if (b eq null) 0
+          else -1
+        }
+        else if (b eq null) 1
+        else {
+          val L = math.min(a.length, b.length)
+          var i = 0
+          while (i < L) {
+            if (a(i) < b(i)) return -1
+            else if (b(i) < a(i)) return 1
+            i += 1
+          }
+          if (L < b.length) -1
+          else if (L < a.length) 1
+          else 0
+        }
+      }
+    }
 
-    val graph = MemoryBasedGraph(repository)
+    val repository = HBaseRepository("localhost", "2181", "Graph", BinaryRandomIdGenerationStrategy())
+
+    val graph = HBaseGraph(repository)
 
     val v1 = graph.addVertex
     val v2 = graph.addVertex
@@ -18,6 +40,13 @@ object Main {
     println(v1 == v1a.get)
     println(e1 == e1a.get)
 
+    val a = graph.getVertex(e1a.get.outVertex.id)
+    val b = graph.getVertex(e1a.get.inVertex.id)
+
+    println(v1 == e1a.get.outVertex)
+    println(v2 == e1a.get.inVertex)
+
+    /*
     println(v2.getInEdges(Seq("LABEL")) == v2.getInEdges(Seq()))
     println(v1.getOutEdges(Seq("LABEL")) == v1.getOutEdges(Seq()))
 
@@ -29,7 +58,7 @@ object Main {
 
     graph.removeVertex(v1)
     graph.removeVertex(v2)
-
+    */
   }
 
 }

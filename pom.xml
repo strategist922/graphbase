@@ -319,10 +319,10 @@
                 <artifactId>zookeeper</artifactId>
                 <version>${zookeeper.version}</version>
                 <exclusions>
-                    <exclusion>
+<!--                    <exclusion>
                         <groupId>log4j</groupId>
                         <artifactId>log4j</artifactId>
-                    </exclusion>
+                    </exclusion>-->
                     <exclusion>
                         <groupId>jline</groupId>
                         <artifactId>jline</artifactId>
