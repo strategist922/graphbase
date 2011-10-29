@@ -1,15 +1,11 @@
 package com.tinkerpop.blueprints.pgm.impls.graphbase;
 
-
 import com.tinkerpop.blueprints.pgm.EdgeTestSuite;
 import com.tinkerpop.blueprints.pgm.Graph;
 import com.tinkerpop.blueprints.pgm.TestSuite;
 import com.tinkerpop.blueprints.pgm.VertexTestSuite;
 import com.tinkerpop.blueprints.pgm.impls.GraphTest;
-import it.davidgreco.graphbase.core.impl.BinaryRandomIdGenerationStrategy;
 import it.davidgreco.graphbase.core.impl.HBaseRepository;
-import it.davidgreco.graphbase.core.impl.MemoryBasedRepository;
-import it.davidgreco.graphbase.core.impl.RandomIdGenerationStrategy;
 
 import java.lang.reflect.Method;
 
