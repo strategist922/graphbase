@@ -4,7 +4,7 @@ object Main {
 
   def main(args: Array[String]) {
 
-    val repository = HBaseRepository("localhost", "2181", "Graph", BinaryRandomIdGenerationStrategy())
+    val repository = HBaseRepository("localhost", "2181", "Graph")
 
     val graph = HBaseGraph(repository)
 
