@@ -5,7 +5,7 @@ import java.lang.Iterable
 import com.tinkerpop.blueprints.pgm.{Vertex, Edge, Graph}
 import it.davidgreco.graphbase.core.{GraphT, CoreGraph, RepositoryT}
 
-case class GraphbaseGraph[T <: Comparable[T]](repository: RepositoryT[T]) extends Graph {
+case class GraphbaseGraph[T](repository: RepositoryT[T]) extends Graph {
 
   val coreGraph: GraphT[T] = new CoreGraph[T](repository)
 
