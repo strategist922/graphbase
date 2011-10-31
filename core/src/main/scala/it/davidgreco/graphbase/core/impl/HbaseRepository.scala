@@ -2,12 +2,15 @@ package it.davidgreco.graphbase.core.impl
 
 import collection.JavaConverters._
 import java.io.IOException
-import org.apache.hadoop.hbase.client._
 import org.apache.hadoop.hbase._
+import client._
 import util.Bytes
 import it.davidgreco.graphbase.core._
+import java.util.{ArrayList, NavigableMap}
 
-case class HBaseRepository(quorum: String, port: String, name: String, idGenerationStrategy: IdGenerationStrategyT[Array[Byte]]) extends RepositoryT[Array[Byte]] {
+case class HBaseRepository(quorum: String, port: String, name: String) extends RepositoryT[Array[Byte]] {
+
+  val idGenerationStrategy = BinaryRandomIdGenerationStrategy()
 
   private val admin = {
     val conf = HBaseConfiguration.create()
@@ -34,9 +37,9 @@ case class HBaseRepository(quorum: String, port: String, name: String, idGenerat
   private val outEdgesColumnFamily: Array[Byte] = Bytes.toBytes(outEdgesColumnFamilyName)
   private var table: HTable = _
 
-  createTables
+  createTables()
 
-  private def createTables = {
+  private def createTables() {
     try {
       if (!admin.tableExists(tableName)) {
         admin.createTable(new HTableDescriptor(tableName));
@@ -47,7 +50,7 @@ case class HBaseRepository(quorum: String, port: String, name: String, idGenerat
         admin.addColumn(tableName, new HColumnDescriptor(outEdgesColumnFamilyName));
         admin.enableTable(tableName);
       }
-      table = new HTable(admin.getConfiguration(), tableName);
+      table = new HTable(admin.getConfiguration, tableName);
     } catch {
       case e: MasterNotRunningException => throw new RuntimeException(e)
       case e: ZooKeeperConnectionException => throw new RuntimeException(e)
@@ -55,7 +58,7 @@ case class HBaseRepository(quorum: String, port: String, name: String, idGenerat
     }
   }
 
-  private def dropTables = {
+  private def dropTables() {
     try {
       if (admin.tableExists(tableName)) {
         admin.disableTable(tableName)
@@ -68,12 +71,11 @@ case class HBaseRepository(quorum: String, port: String, name: String, idGenerat
     }
   }
 
+  def shutdown() {}
 
-  def shutdown(): Unit = {}
-
-  def clear(): Unit = {
-    dropTables
-    createTables
+  def clear() {
+    dropTables()
+    createTables()
   }
 
   def createVertex: VertexT[IdType] = {
@@ -144,7 +146,7 @@ case class HBaseRepository(quorum: String, port: String, name: String, idGenerat
     Some(new CoreEdge[IdType](id, outVertex, inVertex, label, this) with BinaryIdEquatable[CoreEdge[IdType]])
   }
 
-  def removeEdge(edge: EdgeT[Array[Byte]]): Unit = {
+  def removeEdge(edge: EdgeT[Array[Byte]]) {
     val outGet = new Get(edge.outVertex.id)
     val inGet = new Get(edge.inVertex.id)
     val rowOut = table.get(outGet)
@@ -156,32 +158,53 @@ case class HBaseRepository(quorum: String, port: String, name: String, idGenerat
 
     val struct = idGenerationStrategy.getEdgeIdStruct(edge.id)
 
-    val deleteOut = new Delete(rowOut.getRow())
+    val deleteOut = new Delete(rowOut.getRow)
     deleteOut.deleteColumns(outEdgesColumnFamily, struct._2);
 
-    val deleteIn = new Delete(rowIn.getRow())
+    val deleteIn = new Delete(rowIn.getRow)
     deleteIn.deleteColumns(inEdgesColumnFamily, struct._2);
 
     edge.getPropertyKeys map (p => edge.removeProperty(p))
 
-    table.delete(List(deleteOut, deleteIn).asJava)
+    val deleteList = new ArrayList[Delete]()
+    deleteList.add(deleteOut)
+    deleteList.add(deleteIn)
+    table.delete(deleteList)
   }
 
-  def removeVertex(vertex: VertexT[Array[Byte]]): Unit = {
-    /*
+  def removeVertex(vertex: VertexT[Array[Byte]]) {
     for (edge <- this.getOutEdges(vertex, Seq[String]())) {
       this.removeEdge(edge)
     }
     for (edge <- this.getInEdges(vertex, Seq[String]())) {
       this.removeEdge(edge)
-    }*/
+    }
     val delete = new Delete(vertex.id)
     table.delete(delete);
   }
 
-  def getVertices() = null
+  def getVertices(): Iterable[VertexT[Array[Byte]]] = {
+    val scan = new Scan
+    val scanner = table.getScanner(scan)
+    val vertices = for {
+      result <- scanner.asScala
+      val vertex = new CoreVertex[IdType](result.getRow, this) with BinaryIdEquatable[CoreVertex[IdType]]
+    } yield vertex.asInstanceOf[VertexT[Array[Byte]]]
+    scanner.close();
+    vertices
+  }
 
-  def getEdges() = null
+  def getEdges(): Iterable[EdgeT[Array[Byte]]] = {
+    val scan = new Scan
+    val scanner = table.getScanner(scan)
+    val edges = for {
+      result <- scanner.asScala
+      val vertex = new CoreVertex[IdType](result.getRow, this) with BinaryIdEquatable[CoreVertex[IdType]]
+      val outEdges  = this.getOutEdges(vertex, Seq())
+    } yield outEdges
+    scanner.close();
+    edges.flatten
+  }
 
   def getProperty(element: ElementT[Array[Byte]], key: String): Option[AnyRef] =
     element match {
@@ -224,8 +247,8 @@ case class HBaseRepository(quorum: String, port: String, name: String, idGenerat
         val familyMap = row.getFamilyMap(vertexPropertiesColumnFamily)
         (for {
           bkey <- familyMap.keySet.asScala
-          key: String = bkey
-          if (bkey.length != 0)
+          key: String = if (bkey.length == 0) "" else fromTypedBytes(bkey)
+          if (bkey != null && bkey.length != 0)
         } yield key).toSet
       }
       case
@@ -241,16 +264,115 @@ case class HBaseRepository(quorum: String, port: String, name: String, idGenerat
         (for {
           edgeProperty <- familyMap.asScala
           (key, edgeLocalId) = idGenerationStrategy.getEdgePropertyIdStruct(edgeProperty._1)
-          if (edgeProperty.length != 0 && edgeLocalId == struct._2 && !(key == "label"))
+          if (!(key == "label"))
         } yield key).toSet
       }
     }
 
-  def removeProperty(element: ElementT[Array[Byte]], key: String) = null
+  def removeProperty(element: ElementT[Array[Byte]], key: String): Option[AnyRef] =
+    element match {
+      case
+        v: VertexT[IdType] => {
+        val rowGet = new Get(v.id)
+        val row = table.get(rowGet)
+        if (row.isEmpty)
+          throw new RuntimeException("This vertex does not exist")
+        val bvalue = row.getValue(vertexPropertiesColumnFamily, toTypedBytes(key))
+        if (bvalue == null)
+          return None
+        val delete = new Delete(element.id);
+        delete.deleteColumns(vertexPropertiesColumnFamily, key)
+        table.delete(delete)
+        val value: AnyRef = fromTypedBytes(bvalue);
+        Some(value)
+      }
+      case
+        e: EdgeT[IdType] => {
+        val struct = idGenerationStrategy.getEdgeIdStruct(element.id)
+        val rowGet = new Get(struct._1)
+        val row = table.get(rowGet)
+        if (row.isEmpty)
+          throw new RuntimeException("This edge does not exist");
+        val ekey = idGenerationStrategy.generateEdgePropertyId(key, struct._2)
+        val bvalue = row.getValue(edgePropertiesColumnFamily, ekey)
+        if (bvalue == null)
+          return None
+        val delete = new Delete(struct._1);
+        delete.deleteColumns(edgePropertiesColumnFamily, ekey)
+        table.delete(delete)
+        val value: AnyRef = fromTypedBytes(bvalue)
+        Some(value)
+      }
+    }
 
-  def setProperty(element: ElementT[Array[Byte]], key: String, obj: AnyRef) {}
+  def setProperty(element: ElementT[Array[Byte]], key: String, value: AnyRef) {
+    if (key == "id")
+      throw new RuntimeException("Property with key 'id' is not allowed")
+    element match {
+      case
+        v: VertexT[IdType] => {
+        val rowGet = new Get(v.id)
+        val row = table.get(rowGet)
+        if (row.isEmpty)
+          throw new RuntimeException("This vertex does not exist")
+        val put = new Put(v.id)
+        put.add(vertexPropertiesColumnFamily, toTypedBytes(key), toTypedBytes(value))
+        table.put(put)
+      }
+      case
+        e: EdgeT[IdType] => {
+        if (key == "label")
+          throw new RuntimeException("Property with key 'label' is not allowed")
+        val struct = idGenerationStrategy.getEdgeIdStruct(element.id)
+        val rowGet = new Get(struct._1)
+        val row = table.get(rowGet)
+        if (row.isEmpty)
+          throw new RuntimeException("This edge does not exist");
+        val put = new Put(struct._1)
+        put.add(edgePropertiesColumnFamily, idGenerationStrategy.generateEdgePropertyId(key, struct._2), toTypedBytes(value))
+        table.put(put)
+      }
+    }
+  }
 
-  def getInEdges(vertex: VertexT[Array[Byte]], labels: Seq[String]) = null
+  def getInEdges(vertex: VertexT[Array[Byte]], labels: Seq[String]): Iterable[EdgeT[IdType]] = {
+    val rowGet = new Get(vertex.id)
+    val row = table.get(rowGet)
+    if (row.isEmpty)
+      throw new RuntimeException("This vertex does not exist");
+    val familyMap: NavigableMap[Array[Byte], Array[Byte]] = row.getFamilyMap(inEdgesColumnFamily)
+    val edges = for {
+      edge <- familyMap.asScala
+      e = {
+        val struct = idGenerationStrategy.getEdgeIdStruct(edge._2)
+        val outVertex = CoreVertex(struct._1, this)
+        val rowGet = new Get(struct._1)
+        val row = table.get(rowGet)
+        val label: String = row.getValue(edgePropertiesColumnFamily, idGenerationStrategy.generateEdgePropertyId("label", struct._2))
+        new CoreEdge(edge._2, outVertex, vertex, label, this) with BinaryIdEquatable[CoreEdge[IdType]]
+      }
+      if ((labels.size != 0 && labels.contains(e.label)) || labels.size == 0)
+    } yield e
+    edges.toIterable.asInstanceOf[Iterable[EdgeT[IdType]]]
+  }
 
-  def getOutEdges(vertex: VertexT[Array[Byte]], labels: Seq[String]) = null
+  def getOutEdges(vertex: VertexT[Array[Byte]], labels: Seq[String]): Iterable[EdgeT[IdType]] = {
+    val rowGet = new Get(vertex.id)
+    val row = table.get(rowGet)
+    if (row.isEmpty)
+      throw new RuntimeException("This vertex does not exist");
+    val familyMap: NavigableMap[Array[Byte], Array[Byte]] = row.getFamilyMap(outEdgesColumnFamily)
+    val edges = for {
+      edge <- familyMap.asScala
+      e = {
+        val vid: IdType = edge._2
+        val id = idGenerationStrategy.generateEdgeId(vertex.id, edge._1)
+        val inVertex = CoreVertex(vid, this)
+        val label: String = row.getValue(edgePropertiesColumnFamily, idGenerationStrategy.generateEdgePropertyId("label", edge._1))
+        new CoreEdge(id, vertex, inVertex, label, this) with BinaryIdEquatable[CoreEdge[IdType]]
+      }
+      if ((labels.size != 0 && labels.contains(e.label)) || labels.size == 0)
+    } yield e
+    edges.toIterable.asInstanceOf[Iterable[EdgeT[IdType]]]
+  }
 }
