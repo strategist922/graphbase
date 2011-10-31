@@ -4,14 +4,15 @@ import collection.JavaConverters._
 import java.lang.Iterable
 import com.tinkerpop.blueprints.pgm.{Vertex, Edge, Graph}
 import it.davidgreco.graphbase.core.{GraphT, CoreGraph, RepositoryT}
+import it.davidgreco.graphbase.core.impl.{HBaseGraph, HBaseRepository}
 
-case class GraphbaseGraph[T](repository: RepositoryT[T]) extends Graph {
+case class GraphbaseGraph(quorum: String, port: String, name: String) extends Graph {
 
-  val coreGraph: GraphT[T] = new CoreGraph[T](repository)
+  val coreGraph: GraphT[Array[Byte]] = HBaseGraph(HBaseRepository(quorum, port, name))
 
   def addVertex(id: AnyRef): Vertex = coreGraph.addVertex
 
-  def getVertex(id: AnyRef): Vertex = coreGraph.getVertex(id.asInstanceOf[T]) match {
+  def getVertex(id: AnyRef): Vertex = coreGraph.getVertex(id.asInstanceOf[Array[Byte]]) match {
     case Some(x) => x
     case None => null
   }
@@ -27,7 +28,7 @@ case class GraphbaseGraph[T](repository: RepositoryT[T]) extends Graph {
 
   def addEdge(p1: AnyRef, outVertex: Vertex, inVertex: Vertex, label: String): Edge = coreGraph.addEdge(outVertex, inVertex, label)
 
-  def getEdge(id: AnyRef): Edge = coreGraph.getEdge(id.asInstanceOf[T]) match {
+  def getEdge(id: AnyRef): Edge = coreGraph.getEdge(id.asInstanceOf[Array[Byte]]) match {
     case Some(x) => x
     case None => null
   }

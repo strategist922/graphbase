@@ -42,7 +42,7 @@ public class GraphbaseGraphTest extends GraphTest {
 
     @Override
     public Graph getGraphInstance() {
-        Graph graph = new GraphbaseGraph(new HBaseRepository("localhost", "21818", "Graph"));
+        Graph graph = new GraphbaseGraph("localhost", "21818", "Graph");
         graph.clear();
         return graph;
     }
