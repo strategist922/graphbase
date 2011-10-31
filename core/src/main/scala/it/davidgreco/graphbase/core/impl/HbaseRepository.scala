@@ -184,26 +184,11 @@ case class HBaseRepository(quorum: String, port: String, name: String) extends R
   }
 
   def getVertices(): Iterable[VertexT[Array[Byte]]] = {
-    val scan = new Scan
-    val scanner = table.getScanner(scan)
-    val vertices = for {
-      result <- scanner.asScala
-      val vertex = new CoreVertex[IdType](result.getRow, this) with BinaryIdEquatable[CoreVertex[IdType]]
-    } yield vertex.asInstanceOf[VertexT[Array[Byte]]]
-    scanner.close();
-    vertices
+    throw new UnsupportedOperationException
   }
 
   def getEdges(): Iterable[EdgeT[Array[Byte]]] = {
-    val scan = new Scan
-    val scanner = table.getScanner(scan)
-    val edges = for {
-      result <- scanner.asScala
-      val vertex = new CoreVertex[IdType](result.getRow, this) with BinaryIdEquatable[CoreVertex[IdType]]
-      val outEdges  = this.getOutEdges(vertex, Seq())
-    } yield outEdges
-    scanner.close();
-    edges.flatten
+    throw new UnsupportedOperationException
   }
 
   def getProperty(element: ElementT[Array[Byte]], key: String): Option[AnyRef] =
