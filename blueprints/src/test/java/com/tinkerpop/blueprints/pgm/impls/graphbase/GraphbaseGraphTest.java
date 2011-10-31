@@ -6,19 +6,35 @@ import com.tinkerpop.blueprints.pgm.TestSuite;
 import com.tinkerpop.blueprints.pgm.VertexTestSuite;
 import com.tinkerpop.blueprints.pgm.impls.GraphTest;
 import it.davidgreco.graphbase.core.impl.HBaseRepository;
+import org.apache.hadoop.hbase.HBaseTestingUtility;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
 
 public class GraphbaseGraphTest extends GraphTest {
 
+    private HBaseTestingUtility testUtil = new HBaseTestingUtility();
+
+    @BeforeClass
+    public void setUp() throws Exception {
+        testUtil.startMiniCluster();
+    }
+
+    @AfterClass
+    public void tearDown() throws IOException {
+        testUtil.shutdownMiniCluster();
+    }
+
     public GraphbaseGraphTest() {
         this.allowsDuplicateEdges = true;
-        this.allowsSelfLoops = true;
+        this.allowsSelfLoops = false;
         this.ignoresSuppliedIds = true;
         this.isPersistent = true;
         this.isRDFModel = false;
-        this.supportsVertexIteration = true;
-        this.supportsEdgeIteration = true;
+        this.supportsVertexIteration = false;
+        this.supportsEdgeIteration = false;
         this.supportsVertexIndex = false;
         this.supportsEdgeIndex = false;
         this.supportsTransactions = false;
@@ -26,7 +42,7 @@ public class GraphbaseGraphTest extends GraphTest {
 
     @Override
     public Graph getGraphInstance() {
-        Graph graph = new GraphbaseGraph(new HBaseRepository("localhost", "2181", "Graph"));
+        Graph graph = new GraphbaseGraph(new HBaseRepository("localhost", "21818", "Graph"));
         graph.clear();
         return graph;
     }

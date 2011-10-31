@@ -10,7 +10,7 @@ private[core] trait ElementT[T] extends WithRepositoryT[T] {
 
   def getPropertyKeys: Set[String] = repository.getPropertyKeys(self)
 
-  def setProperty(key: String, value: AnyRef): Unit = repository.setProperty(self, key, value)
+  def setProperty(key: String, value: Any): Unit = repository.setProperty(self, key, value.asInstanceOf[AnyRef])
 
   def removeProperty(key: String): Option[AnyRef] = repository.removeProperty(self, key)
 
