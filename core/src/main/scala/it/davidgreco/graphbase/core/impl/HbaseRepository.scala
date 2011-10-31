@@ -214,7 +214,7 @@ case class HBaseRepository(quorum: String, port: String, name: String) extends R
         val row = table.get(rowGet)
         if (row.isEmpty)
           throw new RuntimeException("This vertex does not exist");
-        val p = row.getValue(vertexPropertiesColumnFamily, key)
+        val p = row.getValue(vertexPropertiesColumnFamily, toTypedBytes(key))
         if (p != null)
           Some(fromTypedBytes(p))
         else
