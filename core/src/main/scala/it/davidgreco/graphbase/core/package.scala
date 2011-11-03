@@ -50,6 +50,8 @@ package object core {
   }
 
   implicit def fromTypedBytes[T](bytes: Array[Byte]): T = {
+    if (bytes == null)
+      return null.asInstanceOf[T]
     val bl = bytes.length - 1
     val vbuffer = Bytes.head(bytes, bl)
     (bytes.apply(bl): @switch) match {

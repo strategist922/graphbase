@@ -156,13 +156,13 @@ case class HBaseRepository(quorum: String, port: String, name: String) extends R
       throw new RuntimeException("One or both vertexes don't exist");
     }
 
-    val struct = idGenerationStrategy.getEdgeIdStruct(edge.id)
+    val edgeIdStruct: (Array[Byte], Array[Byte]) = idGenerationStrategy.getEdgeIdStruct(edge.id)
 
     val deleteOut = new Delete(rowOut.getRow)
-    deleteOut.deleteColumns(outEdgesColumnFamily, struct._2);
+    deleteOut.deleteColumns(outEdgesColumnFamily, edgeIdStruct._2);
 
     val deleteIn = new Delete(rowIn.getRow)
-    deleteIn.deleteColumns(inEdgesColumnFamily, struct._2);
+    deleteIn.deleteColumns(inEdgesColumnFamily, edgeIdStruct._2);
 
     edge.getPropertyKeys map (p => edge.removeProperty(p))
 
@@ -200,23 +200,17 @@ case class HBaseRepository(quorum: String, port: String, name: String) extends R
         if (row.isEmpty)
           throw new RuntimeException("This vertex does not exist");
         val p = row.getValue(vertexPropertiesColumnFamily, toTypedBytes(key))
-        if (p != null)
-          Some(fromTypedBytes(p))
-        else
-          None
+        Option(fromTypedBytes(p))
       }
       case
         e: EdgeT[IdType] => {
-        val struct = idGenerationStrategy.getEdgeIdStruct(element.id)
-        val rowGet = new Get(struct._1)
-        val row = table.get(rowGet)
+        val struct: (Array[Byte], Array[Byte]) = idGenerationStrategy.getEdgeIdStruct(element.id)
+        val rowGet: Get = new Get(struct._1)
+        val row: Result = table.get(rowGet)
         if (row.isEmpty)
           throw new RuntimeException("This edge does not exist")
         val p = row.getValue(edgePropertiesColumnFamily, idGenerationStrategy.generateEdgePropertyId(key, struct._2))
-        if (p != null)
-          Some(fromTypedBytes(p))
-        else
-          None
+        Option(fromTypedBytes(p))
       }
     }
 
@@ -268,8 +262,7 @@ case class HBaseRepository(quorum: String, port: String, name: String) extends R
         val delete = new Delete(element.id);
         delete.deleteColumns(vertexPropertiesColumnFamily, key)
         table.delete(delete)
-        val value: AnyRef = fromTypedBytes(bvalue);
-        Some(value)
+        Option(fromTypedBytes(bvalue))
       }
       case
         e: EdgeT[IdType] => {
@@ -285,8 +278,7 @@ case class HBaseRepository(quorum: String, port: String, name: String) extends R
         val delete = new Delete(struct._1);
         delete.deleteColumns(edgePropertiesColumnFamily, ekey)
         table.delete(delete)
-        val value: AnyRef = fromTypedBytes(bvalue)
-        Some(value)
+        Option(fromTypedBytes(bvalue))
       }
     }
 
