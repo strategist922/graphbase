@@ -7,6 +7,7 @@ import client._
 import util.Bytes
 import it.davidgreco.graphbase.core._
 import java.util.{ArrayList, NavigableMap}
+import collection.immutable.Set
 
 case class HBaseRepository(quorum: String, port: String, name: String) extends RepositoryT[Array[Byte]] {
 
@@ -146,7 +147,7 @@ case class HBaseRepository(quorum: String, port: String, name: String) extends R
     Some(new CoreEdge[IdType](id, outVertex, inVertex, label, this) with BinaryIdEquatable[CoreEdge[IdType]])
   }
 
-  def removeEdge(edge: EdgeT[Array[Byte]]) {
+  private def generateRemoveEdgeDeletes(edge: EdgeT[Array[Byte]]): ArrayList[Delete] = {
     val outGet = new Get(edge.outVertex.id)
     val inGet = new Get(edge.inVertex.id)
     val rowOut = table.get(outGet)
@@ -164,23 +165,36 @@ case class HBaseRepository(quorum: String, port: String, name: String) extends R
     val deleteIn = new Delete(rowIn.getRow)
     deleteIn.deleteColumns(inEdgesColumnFamily, edgeIdStruct._2);
 
-    edge.getPropertyKeys map (p => edge.removeProperty(p))
+    val propertyDeletes: Set[Option[(Delete, Array[Byte])]] = edge.getPropertyKeys map (p => generateRemovePropertyDelete(edge, p))
 
     val deleteList = new ArrayList[Delete]()
     deleteList.add(deleteOut)
     deleteList.add(deleteIn)
+    for {
+      p <- propertyDeletes
+      x <- p
+    } {
+      deleteList.add(x._1)
+    }
+    deleteList
+  }
+
+  def removeEdge(edge: EdgeT[Array[Byte]]) {
+    val deleteList = generateRemoveEdgeDeletes(edge)
     table.delete(deleteList)
   }
 
   def removeVertex(vertex: VertexT[Array[Byte]]) {
+    var deleteList = new ArrayList[Delete]
     for (edge <- this.getOutEdges(vertex, Seq[String]())) {
-      this.removeEdge(edge)
+      deleteList.addAll(this.generateRemoveEdgeDeletes(edge))
     }
     for (edge <- this.getInEdges(vertex, Seq[String]())) {
-      this.removeEdge(edge)
+      deleteList.addAll(this.generateRemoveEdgeDeletes(edge))
     }
     val delete = new Delete(vertex.id)
-    table.delete(delete);
+    deleteList.add(delete)
+    table.delete(deleteList);
   }
 
   def getVertices(): Iterable[VertexT[Array[Byte]]] = {
@@ -248,7 +262,7 @@ case class HBaseRepository(quorum: String, port: String, name: String) extends R
       }
     }
 
-  def removeProperty(element: ElementT[Array[Byte]], key: String): Option[AnyRef] =
+  private def generateRemovePropertyDelete(element: ElementT[Array[Byte]], key: String): Option[(Delete, Array[Byte])] =
     element match {
       case
         v: VertexT[IdType] => {
@@ -261,8 +275,7 @@ case class HBaseRepository(quorum: String, port: String, name: String) extends R
           return None
         val delete = new Delete(element.id);
         delete.deleteColumns(vertexPropertiesColumnFamily, key)
-        table.delete(delete)
-        Option(fromTypedBytes(bvalue))
+        Some((delete, bvalue))
       }
       case
         e: EdgeT[IdType] => {
@@ -277,9 +290,17 @@ case class HBaseRepository(quorum: String, port: String, name: String) extends R
           return None
         val delete = new Delete(struct._1);
         delete.deleteColumns(edgePropertiesColumnFamily, ekey)
-        table.delete(delete)
-        Option(fromTypedBytes(bvalue))
+        Some((delete, bvalue))
       }
+    }
+
+
+  def removeProperty(element: ElementT[Array[Byte]], key: String): Option[AnyRef] =
+    for {
+      (delete, value) <- generateRemovePropertyDelete(element, key)
+    } yield {
+      table.delete(delete)
+      fromTypedBytes(value)
     }
 
   def setProperty(element: ElementT[Array[Byte]], key: String, value: AnyRef) {
