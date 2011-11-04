@@ -28,7 +28,7 @@ public class GraphbaseGraphTest extends GraphTest {
 
     public GraphbaseGraphTest() {
         this.allowsDuplicateEdges = true;
-        this.allowsSelfLoops = false;
+        this.allowsSelfLoops = true;
         this.ignoresSuppliedIds = true;
         this.isPersistent = true;
         this.isRDFModel = false;
