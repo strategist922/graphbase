@@ -6,8 +6,9 @@ import org.apache.hadoop.hbase._
 import client._
 import util.Bytes
 import it.davidgreco.graphbase.core._
+import collection.Iterable
+import collection.immutable.{List, Set}
 import java.util.{ArrayList, NavigableMap}
-import collection.immutable.Set
 
 case class HBaseRepository(quorum: String, port: String, name: String) extends RepositoryT[Array[Byte]] {
 
@@ -147,7 +148,7 @@ case class HBaseRepository(quorum: String, port: String, name: String) extends R
     Some(new CoreEdge[IdType](id, outVertex, inVertex, label, this) with BinaryIdEquatable[CoreEdge[IdType]])
   }
 
-  private def generateRemoveEdgeDeletes(edge: EdgeT[Array[Byte]]): ArrayList[Delete] = {
+  private def generateRemoveEdgeDeletes(edge: EdgeT[Array[Byte]]): List[Delete] = {
     val outGet = new Get(edge.outVertex.id)
     val inGet = new Get(edge.inVertex.id)
     val rowOut = table.get(outGet)
@@ -165,36 +166,16 @@ case class HBaseRepository(quorum: String, port: String, name: String) extends R
     val deleteIn = new Delete(rowIn.getRow)
     deleteIn.deleteColumns(inEdgesColumnFamily, edgeIdStruct._2);
 
-    val propertyDeletes: Set[Option[(Delete, Array[Byte])]] = edge.getPropertyKeys map (p => generateRemovePropertyDelete(edge, p))
-
-    val deleteList = new ArrayList[Delete]()
-    deleteList.add(deleteOut)
-    deleteList.add(deleteIn)
-    for {
-      p <- propertyDeletes
-      x <- p
-    } {
-      deleteList.add(x._1)
-    }
-    deleteList
+    deleteIn :: deleteOut :: edge.getPropertyKeys.flatMap(p => generateRemovePropertyDelete(edge, p)).map(p => p._1).toList
   }
 
-  def removeEdge(edge: EdgeT[Array[Byte]]) {
-    val deleteList = generateRemoveEdgeDeletes(edge)
-    table.delete(deleteList)
-  }
+  def removeEdge(edge: EdgeT[Array[Byte]]) = table.delete(new ArrayList[Delete](generateRemoveEdgeDeletes(edge).asJava))
 
   def removeVertex(vertex: VertexT[Array[Byte]]) {
-    var deleteList = new ArrayList[Delete]
-    for (edge <- this.getOutEdges(vertex, Seq[String]())) {
-      deleteList.addAll(this.generateRemoveEdgeDeletes(edge))
-    }
-    for (edge <- this.getInEdges(vertex, Seq[String]())) {
-      deleteList.addAll(this.generateRemoveEdgeDeletes(edge))
-    }
-    val delete = new Delete(vertex.id)
-    deleteList.add(delete)
-    table.delete(deleteList);
+    val deleteVertex: Delete     = new Delete(vertex.id)
+    val deletesOut: List[Delete] = this.getOutEdges(vertex, Seq[String]()).flatMap(e => this.generateRemoveEdgeDeletes(e)).toList
+    val deletesIn: List[Delete]  = this.getInEdges(vertex, Seq[String]()).flatMap(e => this.generateRemoveEdgeDeletes(e)).toList
+    table.delete(new ArrayList[Delete]((deleteVertex +: deletesIn ::: deletesOut).asJava))
   }
 
   def getVertices(): Iterable[VertexT[Array[Byte]]] = {
