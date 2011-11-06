@@ -23,7 +23,7 @@ package object core {
         val out = new ObjectOutputStream(bos);
         out.writeObject(obj)
         out.close();
-        bos.toByteArray()
+        bos.toByteArray
       }
       case _ => throw new RuntimeException("Non supported type")
     }

@@ -8,10 +8,10 @@ case class BinaryRandomIdGenerationStrategy() extends IdGenerationStrategyT[Arra
 
   def generateVertexId: Array[Byte] = {
     val rid = new UUID()
-    Bytes.add(Bytes.toBytes(rid.getTime()), Bytes.toBytes(rid.getClockSeqAndNode()))
+    Bytes.add(Bytes.toBytes(rid.getTime), Bytes.toBytes(rid.getClockSeqAndNode))
   }
 
-  def generateEdgeLocalId: Array[Byte] = Bytes.toBytes(new UUID().getTime())
+  def generateEdgeLocalId: Array[Byte] = Bytes.toBytes(new UUID().getTime)
 
   def generateEdgeId(vertexId: Array[Byte], edgeLocalId: Array[Byte]): Array[Byte] = Bytes.add(vertexId, edgeLocalId)
 

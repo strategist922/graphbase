@@ -16,7 +16,9 @@ case class GraphbaseEdge[T](edge: EdgeT[T]) extends Edge {
 
   def getPropertyKeys: Set[String] = edge.getPropertyKeys.asJava
 
-  def setProperty(key: String, value: AnyRef): Unit = edge.setProperty(key, value)
+  def setProperty(key: String, value: AnyRef) {
+    edge.setProperty(key, value)
+  }
 
   def removeProperty(key: String): AnyRef = edge.removeProperty(key).getOrElse(null)
 

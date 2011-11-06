@@ -5,9 +5,9 @@ trait RepositoryT[T] extends WithIdGenerationStrategyT[T] {
   type IdType = T
 
   //GraphT
-  def shutdown(): Unit
+  def shutdown()
 
-  def clear(): Unit
+  def clear()
 
   def createVertex: VertexT[T]
 
@@ -17,9 +17,9 @@ trait RepositoryT[T] extends WithIdGenerationStrategyT[T] {
 
   def getEdge(id: T): Option[EdgeT[T]]
 
-  def removeEdge(edge: EdgeT[T]): Unit
+  def removeEdge(edge: EdgeT[T])
 
-  def removeVertex(vertex: VertexT[T]): Unit
+  def removeVertex(vertex: VertexT[T])
 
   def getVertices(): Iterable[VertexT[T]]
 
@@ -32,7 +32,7 @@ trait RepositoryT[T] extends WithIdGenerationStrategyT[T] {
 
   def removeProperty(element: ElementT[T], key: String): Option[AnyRef]
 
-  def setProperty(element: ElementT[T], key: String, obj: AnyRef): Unit
+  def setProperty(element: ElementT[T], key: String, obj: AnyRef)
 
   //VertexT
   def getInEdges(vertex: VertexT[T], labels: Seq[String]): Iterable[EdgeT[T]]
