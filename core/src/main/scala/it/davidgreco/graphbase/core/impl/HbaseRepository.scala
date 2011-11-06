@@ -169,7 +169,9 @@ case class HBaseRepository(quorum: String, port: String, name: String) extends R
     deleteIn :: deleteOut :: edge.getPropertyKeys.flatMap(p => generateRemovePropertyDelete(edge, p)).map(p => p._1).toList
   }
 
-  def removeEdge(edge: EdgeT[Array[Byte]]) = table.delete(new ArrayList[Delete](generateRemoveEdgeDeletes(edge).asJava))
+  def removeEdge(edge: EdgeT[Array[Byte]]) {
+    table.delete(new ArrayList[Delete](generateRemoveEdgeDeletes(edge).asJava))
+  }
 
   def removeVertex(vertex: VertexT[Array[Byte]]) {
     val deleteVertex: Delete     = new Delete(vertex.id)
@@ -178,11 +180,11 @@ case class HBaseRepository(quorum: String, port: String, name: String) extends R
     table.delete(new ArrayList[Delete]((deleteVertex +: deletesIn ::: deletesOut).asJava))
   }
 
-  def getVertices(): Iterable[VertexT[Array[Byte]]] = {
+  def getVertices = {
     throw new UnsupportedOperationException
   }
 
-  def getEdges(): Iterable[EdgeT[Array[Byte]]] = {
+  def getEdges = {
     throw new UnsupportedOperationException
   }
 
