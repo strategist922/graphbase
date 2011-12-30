@@ -39,5 +39,7 @@ trait RepositoryT[T] extends WithIdGenerationStrategyT[T] {
 
   def getOutEdges(vertex: VertexT[T], labels: Seq[String]): Iterable[EdgeT[T]]
 
+  //Index
+
 
 }

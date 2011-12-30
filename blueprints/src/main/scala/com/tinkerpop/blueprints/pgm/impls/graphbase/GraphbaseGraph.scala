@@ -12,10 +12,16 @@ case class GraphbaseGraph(quorum: String, port: String, name: String) extends Gr
 
   def addVertex(id: AnyRef): Vertex = coreGraph.addVertex()
 
-  def getVertex(id: AnyRef): Vertex = coreGraph.getVertex(id.asInstanceOf[Array[Byte]]) match {
-    case Some(x) => x
-    case None => null
-  }
+  def getVertex(id: AnyRef): Vertex =
+    try {
+      val bid = id.asInstanceOf[Array[Byte]]
+      coreGraph.getVertex(bid) match {
+        case Some(x) => x
+        case None => null
+      }
+    } catch {
+      case e: ClassCastException => null
+    }
 
   def removeVertex(vertex: Vertex) {
     coreGraph.removeVertex(vertex)
@@ -30,9 +36,14 @@ case class GraphbaseGraph(quorum: String, port: String, name: String) extends Gr
 
   def addEdge(p1: AnyRef, outVertex: Vertex, inVertex: Vertex, label: String): Edge = coreGraph.addEdge(outVertex, inVertex, label)
 
-  def getEdge(id: AnyRef): Edge = coreGraph.getEdge(id.asInstanceOf[Array[Byte]]) match {
-    case Some(x) => x
-    case None => null
+  def getEdge(id: AnyRef): Edge = try {
+    val bid = id.asInstanceOf[Array[Byte]]
+    coreGraph.getEdge(bid) match {
+      case Some(x) => x
+      case None => null
+    }
+  } catch {
+    case e: ClassCastException => null
   }
 
   def removeEdge(edge: Edge) {
