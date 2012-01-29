@@ -39,6 +39,7 @@ case class HBaseRepository(quorum: String, port: String, name: String) extends R
   private val outEdgesColumnFamily: Array[Byte] = Bytes.toBytes(outEdgesColumnFamilyName)
   private var table: HTable = _
 
+
   createTables()
 
   private def createTables() {
